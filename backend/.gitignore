@@ -1,0 +1,18 @@
+# Binaries
+/server
+
+
+# Build
+/dist
+
+
+# OS files
+.DS_Store
+
+
+# Editor
+.vscode/
+
+
+# Env
+.env
