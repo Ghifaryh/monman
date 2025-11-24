@@ -1,6 +1,18 @@
 version: '3.9'
 
 services:
+  # Frontend service
+  frontend:
+    build: ./frontend
+    container_name: monman-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=production
+
+  # Backend API service
   api:
     build: ./backend
     container_name: monman-api
@@ -11,21 +23,33 @@ services:
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASS=postgres
-      - DB_NAME=money
+      - DB_NAME=monman
+      - PORT=8080
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
+  # PostgreSQL database
   db:
-    image: postgres:16
-    container_name: money-db
+    image: postgres:16-alpine
+    container_name: monman-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: money
+      POSTGRES_DB: monman
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d monman" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   db_data:
+    driver: local
