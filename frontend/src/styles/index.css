@@ -238,6 +238,25 @@ html, body {
   background-color: rgb(21 128 61); /* green-700 */
 }
 
+/* Mobile Navigation Grid Layouts */
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* Responsive Text Sizes */
+.text-\[10px\] {
+  font-size: 10px;
+  line-height: 12px;
+}
+
 /* Scrollbar Styling for Dark Mode */
 .dark ::-webkit-scrollbar {
   width: 8px;

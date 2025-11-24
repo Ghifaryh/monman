@@ -35,7 +35,7 @@ function App() {
   const navigationItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/transactions', label: 'Transactions', icon: '💳' },
-    { path: '/ui', label: 'Components', icon: '🎨' },
+    // { path: '/ui', label: 'Components', icon: '🎨' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -85,7 +85,7 @@ function App() {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:bg-white lg:border-r lg:border-gray-200">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-gray-200">
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4">
@@ -167,18 +167,24 @@ function App() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-        <div className="grid grid-cols-3">
+        <div className={`grid ${navigationItems.length === 2 ? 'grid-cols-2' :
+          navigationItems.length === 3 ? 'grid-cols-3' :
+            navigationItems.length === 4 ? 'grid-cols-4' :
+              navigationItems.length === 5 ? 'grid-cols-5' :
+                'grid-cols-3'} gap-0`}>
           {navigationItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center py-2 px-1 text-xs transition-colors ${isActive(item.path)
+              className={`flex flex-col items-center py-3 px-1 text-xs transition-colors ${isActive(item.path)
                 ? 'text-blue-600 bg-blue-50'
                 : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               <span className="text-2xl mb-1">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
+              <span className={`font-medium ${navigationItems.length > 3 ? 'text-[10px]' : 'text-xs'}`}>
+                {item.label}
+              </span>
             </Link>
           ))}
         </div>
