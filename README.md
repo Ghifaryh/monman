@@ -31,19 +31,27 @@ This project serves as a practical learning experience for:
 - **Database:** PostgreSQL with persistent volumes
 - **Development:** Hot reload for both frontend and backend
 
-## 🏗 Architecture Features
+## 🏗 Current Features
 
-### Financial Management
+### User Interface
+- **Professional Login**: Two-column desktop layout with gradient branding
+- **Mobile-Optimized Navigation**: Bottom tab bar for thumb accessibility
+- **Responsive Design**: Seamless mobile-to-desktop experience
+- **Theme System**: Light/dark mode toggle (UI complete, CSS pending)
+- **Dynamic Titles**: Context-aware page titles and navigation
+
+### Financial Management (Planned)
 - **Income Tracking**: Multiple income types (salary, freelance, investments)
 - **Expense Categories**: Weekly, monthly, and yearly spending patterns
 - **Transaction Management**: Comprehensive income/outcome tracking
-- **Mobile-First UX**: Touch-friendly interface optimized for mobile usage
+- **Indonesian Rupiah**: Native IDR currency support and formatting
 
-### Technical Highlights
-- **Authentication System**: Route-level protection with redirect handling
-- **Dynamic Page Titles**: Context-aware document titles
-- **Responsive Navigation**: Mobile bottom tabs + desktop sidebar
-- **Feature-Based Organization**: Scalable code structure with clean separation
+### Technical Architecture
+- **Authentication Flow**: Route-level protection with automatic redirects
+- **API Client**: Centralized request handling with error management
+- **State Management**: TanStack Query for server state, hooks for client state
+- **Feature Organization**: Scalable code structure with clean separation
+- **Mobile-First**: Progressive enhancement from mobile to desktop
 
 ## 🚀 Getting Started
 
@@ -101,7 +109,6 @@ monman/
 │   │   └── routes/          # Route configuration
 │   ├── package.json
 │   └── vite.config.ts
-├── migrations/              # Database schema
 ├── docker-compose.yml
 └── README.md
 ```
@@ -167,17 +174,31 @@ docker exec -it monman_db_1 psql -U postgres -d monman
 
 ## 🚧 Roadmap
 
+### ✅ Completed
 - [x] Project structure and Docker setup
-- [x] Basic Go API with health endpoint
+- [x] Basic Go API with health endpoint and CORS
 - [x] React frontend with TanStack Router
-- [x] Mobile-first responsive layout
-- [x] Authentication routing and page titles
-- [ ] Database models and migrations
-- [ ] User authentication and sessions
-- [ ] Transaction CRUD operations
-- [ ] Income/expense categorization
-- [ ] Mobile PWA features
-- [ ] Data visualization and reports
+- [x] Mobile-first responsive layout with bottom navigation
+- [x] Authentication routing and dynamic page titles
+- [x] Professional login page with mobile/desktop layouts
+- [x] Theme toggle UI components (light/dark mode)
+- [x] Transaction list component with mobile optimization
+- [x] User profile and logout functionality (UI)
+- [x] Indonesian Rupiah currency formatting
+
+### 🚧 In Progress
+- [ ] Database models and migrations (PostgreSQL schema ready)
+- [ ] Backend authentication and JWT sessions
+- [ ] API integration for user login/registration
+- [ ] Dark mode CSS implementation
+
+### 📋 Planned
+- [ ] Transaction CRUD operations with categories
+- [ ] Income/expense categorization and filtering
+- [ ] Dashboard with financial overview
+- [ ] Data visualization and spending reports
+- [ ] Mobile PWA features (offline support, app install)
+- [ ] Advanced filtering and search functionality
 
 ## 📱 Mobile-First Design
 

@@ -1,73 +1,80 @@
-# React + TypeScript + Vite
+# MonMan Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React TypeScript frontend for the MonMan personal finance management application, built with mobile-first responsive design principles.
 
-Currently, two official plugins are available:
+## 🛠 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 18** with TypeScript for type-safe development
+- **TanStack Router** for advanced client-side routing with nested layouts
+- **TanStack Query** for server state management and caching
+- **TailwindCSS v4** with mobile-first responsive utilities
+- **Vite** with fast HMR and optimized builds
+- **Bun** runtime for improved performance
 
-## React Compiler
+## 🏗 Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Mobile-First Design
+- **Responsive breakpoints**: Mobile → tablet → desktop progression
+- **Touch-friendly UI**: Minimum 44px tap targets, thumb-accessible navigation
+- **Bottom tab navigation** for mobile, sidebar for desktop
+- **Progressive enhancement** from mobile to desktop features
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Route Structure
+```
+/                    # Login page (public, no layout)
+/app                 # Protected route with App layout
+├── /dashboard       # Main dashboard
+├── /transactions    # Transaction management
+└── /profile         # User profile
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### State Management
+- **Server State**: TanStack Query for API data, caching, and synchronization
+- **Client State**: Custom hooks (`useLocalStorage`) for persistent UI state
+- **Theme Management**: React useState with localStorage persistence
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🚀 Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Getting Started
+```bash
+# Install dependencies
+bun install
+
+# Start development server (requires backend running)
+bun dev
+
+# Type checking
+bun run type-check
+
+# Build for production
+bun run build
+```
+
+### Key Features
+- **Authentication Flow**: Route-protected pages with automatic redirects
+- **Dynamic Titles**: Context-aware document titles using `useDocumentTitle`
+- **Currency Formatting**: Indonesian Rupiah (IDR) with proper locale formatting
+- **Error Handling**: Centralized API error management with user feedback
+- **Theme System**: Light/dark mode toggle (UI implemented, CSS pending)
+
+### Code Organization
+```
+src/
+├── api/              # API client and utilities
+├── components/       # Shared UI components
+├── features/         # Feature-specific components
+├── hooks/           # Custom React hooks
+├── layouts/         # Layout components (App.tsx)
+├── lib/             # Utility functions
+├── pages/           # Route components
+├── routes/          # TanStack Router configuration
+└── styles/          # Global CSS and Tailwind
+```
+
+### Mobile-First Guidelines
+- Start with mobile layout, enhance for larger screens
+- Use `lg:` prefixes for desktop-specific styles
+- Test touch interactions and thumb accessibility
+- Ensure minimum 44px tap targets for buttons
+- Consider network constraints and loading states
 ```
