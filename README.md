@@ -1,18 +1,35 @@
 # MonMan - Personal Money Management
 
-A money management application built for learning purposes, combining modern web technologies.
+A comprehensive personal finance management application designed for mobile-first usage, built as a learning project to explore modern full-stack development patterns.
 
-## Tech Stack
+## 🎯 Purpose
 
-- **Backend:** Go (Golang)
-- **Frontend:** React
-- **Frontend Tooling:** Bun (JavaScript runtime and toolkit)
-- **Database:** PostgreSQL
-- **Containerization:** Docker
+This project serves as a practical learning experience for:
+- Modern Go backend development with clean architecture
+- React TypeScript frontend with advanced routing and state management
+- Mobile-first responsive design principles
+- Full-stack API integration and authentication patterns
+- Container orchestration with Docker
 
-## Purpose
+## 🚀 Tech Stack
 
-A personal project to manage finances and explore full-stack development with Go and React.
+### Backend
+- **Language:** Go 1.21+ with Chi router
+- **Architecture:** Clean architecture with internal packages
+- **Database:** PostgreSQL 16 with UUID-based schema
+- **API:** RESTful JSON API with CORS support
+
+### Frontend
+- **Framework:** React 18 with TypeScript
+- **Routing:** TanStack Router with nested layouts
+- **State Management:** TanStack Query + custom hooks
+- **Styling:** TailwindCSS v4 with mobile-first design
+- **Build Tool:** Vite with Bun runtime
+
+### Infrastructure
+- **Containerization:** Docker with multi-stage builds
+- **Database:** PostgreSQL with persistent volumes
+- **Development:** Hot reload for both frontend and backend
 
 ## Getting Started
 
