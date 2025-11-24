@@ -152,6 +152,17 @@ html, body {
   opacity: 0.6;
 }
 
+/* Select Fields */
+.dark select {
+  background-color: rgb(31 41 55); /* gray-800 */
+  color: rgb(243 244 246); /* gray-100 */
+}
+
+.dark select option {
+  background-color: rgb(31 41 55); /* gray-800 */
+  color: rgb(243 244 246); /* gray-100 */
+}
+
 /* Buttons */
 .dark button:disabled {
   opacity: 0.6;
