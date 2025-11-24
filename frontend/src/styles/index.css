@@ -10,3 +10,248 @@ html, body {
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* Dark Mode Styles */
+.dark {
+  color-scheme: dark;
+}
+
+/* Background Colors */
+.dark body {
+  background-color: rgb(17 24 39); /* gray-900 */
+}
+
+.dark .bg-gray-50 {
+  background-color: rgb(17 24 39); /* gray-900 */
+}
+
+.dark .bg-white {
+  background-color: rgb(31 41 55); /* gray-800 */
+}
+
+.dark .bg-gray-100 {
+  background-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark .bg-blue-50 {
+  background-color: rgb(30 58 138); /* blue-800 */
+}
+
+.dark .bg-red-50 {
+  background-color: rgb(127 29 29); /* red-800 */
+}
+
+.dark .bg-green-50 {
+  background-color: rgb(22 101 52); /* green-800 */
+}
+
+/* Text Colors */
+.dark .text-gray-900 {
+  color: rgb(243 244 246); /* gray-100 */
+}
+
+.dark .text-gray-700 {
+  color: rgb(209 213 219); /* gray-300 */
+}
+
+.dark .text-gray-600 {
+  color: rgb(156 163 175); /* gray-400 */
+}
+
+.dark .text-gray-500 {
+  color: rgb(107 114 128); /* gray-500 */
+}
+
+.dark .text-blue-700 {
+  color: rgb(147 197 253); /* blue-300 */
+}
+
+.dark .text-blue-600 {
+  color: rgb(96 165 250); /* blue-400 */
+}
+
+.dark .text-red-600 {
+  color: rgb(248 113 113); /* red-400 */
+}
+
+.dark .text-green-800 {
+  color: rgb(34 197 94); /* green-500 */
+}
+
+.dark .text-red-800 {
+  color: rgb(248 113 113); /* red-400 */
+}
+
+/* Border Colors */
+.dark .border-gray-200 {
+  border-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark .border-gray-300 {
+  border-color: rgb(75 85 99); /* gray-600 */
+}
+
+.dark .border-blue-200 {
+  border-color: rgb(30 58 138); /* blue-800 */
+}
+
+.dark .border-red-200 {
+  border-color: rgb(127 29 29); /* red-800 */
+}
+
+.dark .border-green-200 {
+  border-color: rgb(22 101 52); /* green-800 */
+}
+
+/* Hover States */
+.dark .hover\:bg-gray-50:hover {
+  background-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: rgb(75 85 99); /* gray-600 */
+}
+
+.dark .hover\:bg-red-50:hover {
+  background-color: rgb(127 29 29); /* red-800 */
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: rgb(243 244 246); /* gray-100 */
+}
+
+.dark .hover\:text-blue-700:hover {
+  color: rgb(147 197 253); /* blue-300 */
+}
+
+.dark .hover\:text-red-600:hover {
+  color: rgb(248 113 113); /* red-400 */
+}
+
+/* Focus States */
+.dark .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgb(59 130 246); /* blue-500 */
+}
+
+.dark .focus\:border-blue-500:focus {
+  border-color: rgb(59 130 246); /* blue-500 */
+}
+
+/* Input Fields */
+.dark input {
+  background-color: rgb(31 41 55); /* gray-800 */
+  color: rgb(243 244 246); /* gray-100 */
+}
+
+.dark input::placeholder {
+  color: rgb(107 114 128); /* gray-500 */
+}
+
+.dark input:disabled {
+  background-color: rgb(55 65 81); /* gray-700 */
+  opacity: 0.6;
+}
+
+/* Buttons */
+.dark button:disabled {
+  opacity: 0.6;
+}
+
+/* Gradient Backgrounds for Dark Mode */
+.dark .from-blue-50 {
+  --tw-gradient-from: rgb(30 58 138); /* blue-800 */
+  --tw-gradient-to: rgb(30 58 138 / 0);
+}
+
+.dark .to-indigo-100 {
+  --tw-gradient-to: rgb(55 48 163); /* indigo-800 */
+}
+
+.dark .bg-gradient-to-br.from-blue-50.to-indigo-100 {
+  background: linear-gradient(to bottom right, rgb(30 58 138), rgb(55 48 163)) !important;
+}
+
+/* Card and Container Backgrounds */
+.dark .bg-white {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 10px 10px -5px rgb(0 0 0 / 0.1);
+}
+
+/* Specific Component Overrides */
+.dark .border {
+  border-color: rgb(55 65 81); /* gray-700 */
+}
+
+.dark .border-t {
+  border-top-color: rgb(55 65 81); /* gray-700 */
+}
+
+/* Green/Red Status Colors for Dark Mode */
+.dark .bg-green-100 {
+  background-color: rgb(20 83 45); /* green-800 */
+}
+
+.dark .text-green-700 {
+  color: rgb(74 222 128); /* green-400 */
+}
+
+.dark .text-green-600 {
+  color: rgb(34 197 94); /* green-500 */
+}
+
+/* Softer red backgrounds for better eye comfort in dark mode */
+.dark .bg-red-100 {
+  background-color: rgb(75 29 29); /* Softer dark red background */
+}
+
+.dark .text-red-700 {
+  color: rgb(248 113 113); /* red-400 */
+}
+
+.dark .text-red-600 {
+  color: rgb(248 113 113); /* Keep red-400 for better contrast and comfort */
+}
+
+/* Specific override for transaction icon red background in dark mode */
+.dark .bg-red-100.text-red-600 {
+  background-color: rgb(55 29 29); /* Even softer red background */
+  color: rgb(252 165 165); /* red-300 - softer red text */
+}
+
+/* Button Hover States */
+.dark .hover\\:bg-blue-700:hover {
+  background-color: rgb(29 78 216); /* blue-700 */
+}
+
+.dark .hover\\:bg-green-700:hover {
+  background-color: rgb(21 128 61); /* green-700 */
+}
+
+/* Scrollbar Styling for Dark Mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgb(31 41 55); /* gray-800 */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99); /* gray-600 */
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128); /* gray-500 */
+}

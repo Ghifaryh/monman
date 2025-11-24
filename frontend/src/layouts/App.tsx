@@ -1,18 +1,30 @@
 import { Outlet, Link, useLocation } from "@tanstack/react-router";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../styles/index.css'
 
 function App() {
   const location = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check localStorage or system preference on initial load
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      return saved === 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  // Apply theme on component mount
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    // TODO: Implement actual dark mode theme switching
-    document.documentElement.classList.toggle('dark', !isDarkMode);
-  };
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
 
-  const handleLogout = () => {
+    // Update localStorage
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  }; const handleLogout = () => {
     // TODO: Implement actual logout logic
     console.log('Logging out...');
     localStorage.removeItem('authToken');

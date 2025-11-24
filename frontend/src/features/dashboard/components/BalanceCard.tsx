@@ -53,8 +53,8 @@ export function BalanceCard() {
             {/* Monthly Change */}
             <div className="flex items-center gap-2">
               <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${isPositiveChange
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
                 }`}>
                 <svg className={`w-4 h-4 ${isPositiveChange ? 'rotate-0' : 'rotate-180'}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
