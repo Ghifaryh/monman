@@ -1,11 +1,15 @@
 // Transaction feature exports
-// This will contain all transaction-related components, hooks, and utilities
+// Central export point for all transaction-related functionality
 
-// Example structure for future development:
-// export { TransactionList } from './components/TransactionList';
+// Components
+export { TransactionList } from './components/TransactionList';
+export { TransactionFilters } from './components/TransactionFilters';
+
+// Future exports (commented out until implemented):
 // export { AddTransactionForm } from './components/AddTransactionForm';
+// export { TransactionDetail } from './components/TransactionDetail';
 // export { useTransactions } from './hooks/useTransactions';
 // export { transactionApi } from './api/transactionApi';
 
-// Placeholder export
-export const TRANSACTION_FEATURE_READY = false;
+// Types (when you add them):
+// export type { Transaction, TransactionFilter } from './types';
