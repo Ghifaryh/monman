@@ -34,19 +34,19 @@ export default function DashboardPage() {
         {/* Quick Balance View - Mobile */}
         <div className="text-right lg:hidden">
           <div className="text-xs text-gray-500">Total Balance</div>
-          <div className="text-lg font-bold text-gray-900">$2,543.67</div>
+          <div className="text-lg font-bold text-gray-900">Rp 2.543.670</div>
         </div>
       </div>
 
       {/* Feature Components - Mobile-First Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <BalanceCard />
         <RecentTransactions />
       </div>
 
       {/* Quick Actions - Mobile-Friendly */}
-      <div className="bg-white rounded-lg border p-4 sm:p-6">
-        <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
+      <div className="bg-white rounded-lg border p-4 sm:p-6 shadow-sm">
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Quick Actions</h2>
 
         {/* Mobile: Stack buttons, Desktop: Inline */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
