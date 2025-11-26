@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { apiRequest } from '../api/client';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -15,22 +15,22 @@ export default function LoginPage() {
     try {
       const response = await apiRequest<{
         message: string;
-        email: string;
+        username: string;
         status: string;
         note: string;
       }>('/api/login', {
         method: 'POST',
         body: JSON.stringify({
-          email,
+          username,
           password,
         }),
       });
 
-      setMessage(`✅ Connection successful! Backend received email: ${response.email}`);
+      setMessage(`✅ Connection successful! Backend received username: ${response.username}`);
       console.log('Backend response:', response);
 
       // Clear form
-      setEmail('');
+      setUsername('');
       setPassword('');
     } catch (error) {
       setMessage(`❌ Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -64,17 +64,17 @@ export default function LoginPage() {
           <form className="bg-white shadow-xl rounded-xl p-6 sm:p-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                  Username
                 </label>
                 <input
-                  id="email"
-                  type="email"
+                  id="username"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm disabled:bg-gray-50 disabled:opacity-60"
-                  placeholder="Enter your email"
+                  placeholder="Enter your username"
                   disabled={isLoading}
                 />
               </div>
@@ -232,17 +232,17 @@ export default function LoginPage() {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div>
-                  <label htmlFor="desktop-email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address
+                  <label htmlFor="desktop-username" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Username
                   </label>
                   <input
-                    id="desktop-email"
-                    type="email"
+                    id="desktop-username"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-50 disabled:opacity-60"
-                    placeholder="Enter your email"
+                    placeholder="Enter your username"
                     disabled={isLoading}
                   />
                 </div>

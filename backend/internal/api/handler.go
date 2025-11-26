@@ -47,17 +47,17 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log received data for testing
-	log.Printf("Login attempt - Email: %s, Password: %s", loginReq.Email, loginReq.Password)
+	log.Printf("Login attempt - Username: %s, Password: %s", loginReq.Username, loginReq.Password)
 
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 
 	// For now, just echo back the received data (minus password for security)
 	response := map[string]interface{}{
-		"message": "Login request received successfully",
-		"email":   loginReq.Email,
-		"status":  "success",
-		"note":    "This is a basic connection test - authentication not implemented yet",
+		"message":  "Login request received successfully",
+		"username": loginReq.Username,
+		"status":   "success",
+		"note":     "This is a basic connection test - authentication not implemented yet",
 	}
 
 	json.NewEncoder(w).Encode(response)
