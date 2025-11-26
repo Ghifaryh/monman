@@ -40,11 +40,13 @@ This project serves as a practical learning experience for:
 - **Theme System**: Light/dark mode toggle (UI complete, CSS pending)
 - **Dynamic Titles**: Context-aware page titles and navigation
 
-### Financial Management (Planned)
-- **Income Tracking**: Multiple income types (salary, freelance, investments)
-- **Expense Categories**: Weekly, monthly, and yearly spending patterns
-- **Transaction Management**: Comprehensive income/outcome tracking
-- **Indonesian Rupiah**: Native IDR currency support and formatting
+### Financial Management
+- **Budget Categories**: Indonesian-optimized templates (Belanja Bulanan, Bensin Motor, Listrik & Air)
+- **Smart Budget Tracking**: Period-based allocations with spending progress
+- **Transaction Management**: Item tracking with quantity, store location, and flexible categorization
+- **Indonesian Shopping Patterns**: Preset purchases for common items (Indomie, gas by rupiah, etc.)
+- **Currency Support**: Native Indonesian Rupiah formatting with proper locale
+- **Budget Management**: Dual approach with inline editing and dedicated settings page
 
 ### Technical Architecture
 - **Authentication Flow**: Route-level protection with automatic redirects
@@ -176,21 +178,22 @@ docker exec -it monman_db_1 psql -U postgres -d monman
 
 ### ✅ Completed
 - [x] Project structure and Docker setup
-- [x] Basic Go API with health endpoint and CORS
-- [x] React frontend with TanStack Router
-- [x] Mobile-first responsive layout with bottom navigation
-- [x] Authentication routing and dynamic page titles
-- [x] Professional login page with mobile/desktop layouts
-- [x] Theme toggle UI components (light/dark mode)
-- [x] Transaction list component with mobile optimization
-- [x] User profile and logout functionality (UI)
-- [x] Indonesian Rupiah currency formatting
+- [x] PostgreSQL 16 database with complete MonMan schema (9 tables)
+- [x] Go API with username-based authentication system
+- [x] React frontend with TanStack Router and feature-based architecture
+- [x] Mobile-first responsive layout with adaptive navigation
+- [x] Professional login page with two-column desktop design
+- [x] Complete budget management system with Indonesian templates
+- [x] Budget category cards with transaction tracking and store locations
+- [x] Dark/light theme system with proper color coordination
+- [x] Indonesian shopping pattern support (flexible quantities, preset purchases)
+- [x] Currency formatting with Indonesian locale support
 
 ### 🚧 In Progress
-- [ ] Database models and migrations (PostgreSQL schema ready)
-- [ ] Backend authentication and JWT sessions
-- [ ] API integration for user login/registration
-- [ ] Dark mode CSS implementation
+- [ ] Backend API integration for budget data persistence
+- [ ] Real-time budget tracking with database synchronization
+- [ ] Enhanced transaction CRUD operations
+- [ ] User session management and data protection
 
 ### 📋 Planned
 - [ ] Transaction CRUD operations with categories

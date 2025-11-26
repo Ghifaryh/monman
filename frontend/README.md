@@ -21,11 +21,14 @@ React TypeScript frontend for the MonMan personal finance management application
 
 ### Route Structure
 ```
-/                    # Login page (public, no layout)
-/app                 # Protected route with App layout
-├── /dashboard       # Main dashboard
-├── /transactions    # Transaction management
-└── /profile         # User profile
+/                      # Login page (public, no layout)
+/app                   # Protected route with App layout
+├── /dashboard         # Main dashboard
+├── /transactions      # Transaction management
+├── /ui                # Component showcase
+├── /budget-showcase   # Budget category cards demo
+├── /budget-management # Budget management examples
+└── /budget-settings   # Budget configuration page
 ```
 
 ### State Management
@@ -78,10 +81,12 @@ src/
 #### ✅ Completed Features
 - **Login Page**: Professional two-column desktop layout with mobile-first design
 - **App Layout**: Mobile bottom navigation, desktop sidebar, theme toggle, logout functionality
-- **Dashboard Components**: BalanceCard with gradient background, RecentTransactions list
-- **Transaction Management**: Mobile-optimized list view with filters
-- **Dark Mode**: Complete implementation with CSS overrides for all components
-- **Responsive Design**: Adaptive navigation that handles 2-5 menu items dynamically
+- **Budget Management**: Complete Indonesian-optimized system with category templates
+- **Budget Cards**: Expandable cards with transaction tracking, preset purchases, and store locations
+- **Settings Interface**: Dedicated budget configuration page with template presets
+- **Transaction Management**: Mobile-optimized list view with Indonesian shopping patterns
+- **Dark Mode**: Complete implementation with light/dark mode color coordination
+- **Responsive Design**: Adaptive navigation and touch-friendly Indonesian UI elements
 
 #### 🚧 Pending Integration
 - Backend API integration for authentication and data
