@@ -1,6 +1,5 @@
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { BalanceCard } from '../features/dashboard/components/BalanceCard';
-import { RecentTransactions } from '../features/dashboard/components/RecentTransactions';
+import { BalanceCard, RecentTransactions } from '../features/dashboard';
 
 /**
  * Dashboard Page - Top level route component

@@ -4,6 +4,10 @@
 // Components
 export { BalanceCard } from './components/BalanceCard';
 export { RecentTransactions } from './components/RecentTransactions';
+export { BudgetCategoryCard } from './components/BudgetCategoryCard';
+
+// Types
+export type { BudgetTransaction, BudgetCategoryCardProps } from './components/BudgetCategoryCard';
 
 // Future exports (when implemented):
 // export { SpendingChart } from './components/SpendingChart';

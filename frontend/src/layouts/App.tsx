@@ -35,6 +35,7 @@ function App() {
   const navigationItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/transactions', label: 'Transactions', icon: '💳' },
+    { path: '/budget-showcase', label: 'Budget Cards', icon: '💰' },
     // { path: '/ui', label: 'Components', icon: '🎨' },
   ];
 

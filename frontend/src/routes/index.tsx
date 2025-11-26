@@ -76,7 +76,43 @@ const showcaseRoute = createRoute({
   },
 });
 
-// 6. Login route (no main layout, full custom styling)
+// 6. Budget Category Cards showcase route
+import { BudgetCategoryShowcase } from "../components/BudgetCategoryShowcase";
+
+const budgetShowcaseRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/budget-showcase",
+  component: BudgetCategoryShowcase,
+  beforeLoad: () => {
+    setDocumentTitle('Budget Categories');
+  },
+});
+
+// 7. Budget Management Examples showcase route
+import { BudgetManagementShowcase } from "../components/BudgetManagementShowcase";
+
+const budgetManagementRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/budget-management",
+  component: BudgetManagementShowcase,
+  beforeLoad: () => {
+    setDocumentTitle('Budget Management Examples');
+  },
+});
+
+// 8. Budget Settings Page route
+import { BudgetSettingsPage } from "../pages/BudgetSettingsPage";
+
+const budgetSettingsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/budget-settings",
+  component: BudgetSettingsPage,
+  beforeLoad: () => {
+    setDocumentTitle('Budget Settings');
+  },
+});
+
+// 7. Login route (no main layout, full custom styling)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
@@ -99,6 +135,9 @@ const routeTree = rootRoute.addChildren([
     indexRoute,
     transactionsRoute,
     showcaseRoute,
+    budgetShowcaseRoute,
+    budgetManagementRoute,
+    budgetSettingsRoute,
   ]),
   loginRoute,
 ]);
