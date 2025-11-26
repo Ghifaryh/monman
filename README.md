@@ -73,18 +73,48 @@ cd monman
 # Option 1: Full stack with Docker (recommended)
 docker-compose up
 
-# Option 2: Development mode
-# Terminal 1 - Backend
+# Option 2: Development mode with database in Docker (hybrid approach)
+# Terminal 1 - Start PostgreSQL database
+docker-compose -f docker-compose.dev.yml up -d
+
+# Terminal 2 - Run database migrations
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0002_seed_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0003_sample_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_seed_users.sql
+
+# Terminal 3 - Backend
 cd backend && go run cmd/server/main.go
 
-# Terminal 2 - Frontend
+# Terminal 4 - Frontend
 cd frontend && bun dev
+
+# Option 3: Automated setup (recommended for new environments)
+./dev-setup.sh
 ```
 
 ### Access Points
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
-- **Database**: localhost:5432 (postgres/postgres)
+- **Database**: localhost:5432 (monman_user/monman_pass/monman_db)
+
+### Test Users (after running migrations)
+- **testuser** / test@example.com (password: `password123`)
+- **admin** / admin@monman.com (password: `admin123`)
+- **demo** / demo@monman.com (password: `demo123`)
+- **budi** / budi@example.com (password: `indonesia123`)
+
+### API Registration Examples
+```bash
+# Register new users via API
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"husband","password":"x","first_name":"Ghifary","last_name":"The Husband"}'
+
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"wifey","password":"x","first_name":"Inten","last_name":"Wifey"}'
+```
 
 ## 📁 Project Structure
 
@@ -151,11 +181,20 @@ bun run lint
 
 ### Database Operations
 ```bash
-# Connect to PostgreSQL
-docker exec -it monman_db_1 psql -U postgres -d monman
+# Connect to PostgreSQL (Docker container)
+docker exec -it monman-db-dev psql -U monman_user -d monman_db
 
-# Run migrations (when implemented)
-# go run migrations/migrate.go
+# Connect via native psql client (if installed)
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db
+
+# Check database tables
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c "\dt"
+
+# View sample data
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c "SELECT username, email FROM users;"
+
+# Run specific migration
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
 ```
 
 ## 🎯 Learning Objectives
@@ -177,23 +216,21 @@ docker exec -it monman_db_1 psql -U postgres -d monman
 ## 🚧 Roadmap
 
 ### ✅ Completed
-- [x] Project structure and Docker setup
-- [x] PostgreSQL 16 database with complete MonMan schema (9 tables)
-- [x] Go API with username-based authentication system
-- [x] React frontend with TanStack Router and feature-based architecture
-- [x] Mobile-first responsive layout with adaptive navigation
-- [x] Professional login page with two-column desktop design
-- [x] Complete budget management system with Indonesian templates
-- [x] Budget category cards with transaction tracking and store locations
-- [x] Dark/light theme system with proper color coordination
-- [x] Indonesian shopping pattern support (flexible quantities, preset purchases)
-- [x] Currency formatting with Indonesian locale support
+- [x] **Project Structure & Docker**: Complete containerization with PostgreSQL 16
+- [x] **Database Schema**: 9 tables with UUID keys, Indonesian categories, sample data
+- [x] **Authentication System**: JWT + bcrypt with user registration/login APIs
+- [x] **Database Migrations**: Complete schema with seed data and test users
+- [x] **Development Workflow**: Hybrid Docker database + native development setup
+- [x] **Frontend Architecture**: TanStack Router with protected routes and auth flow
+- [x] **Mobile-First UI**: Professional login, responsive navigation, theme system
+- [x] **Indonesian Support**: Rupiah formatting, local categories, cultural patterns
+- [x] **Budget Management UI**: Cards with inline editing, settings page, shopping patterns
+- [x] **Cross-Platform Setup**: Works on WSL, Arch, macOS with identical configuration
 
 ### 🚧 In Progress
-- [ ] Backend API integration for budget data persistence
-- [ ] Real-time budget tracking with database synchronization
-- [ ] Enhanced transaction CRUD operations
-- [ ] User session management and data protection
+- [ ] **API Integration**: Connect frontend budget components to backend endpoints
+- [ ] **Transaction CRUD**: Complete transaction management with categories and accounts
+- [ ] **Dashboard Data**: Real-time balance cards and recent transactions from database
 
 ### 📋 Planned
 - [ ] Transaction CRUD operations with categories
@@ -218,3 +255,11 @@ This is a personal learning project, but feedback and suggestions are welcome! P
 ## 📄 License
 
 Personal project for learning purposes. Code available for educational reference.
+
+
+```cmd
+curl -X POST http://localhost:8080/api/auth/register   -H "Content-Type: application/json"   -d '{"username":"gip","password":"giproot","first_name":"Ghifary","last_name":"The Husband"}'
+
+curl -X POST http://localhost:8080/api/auth/register   -H "Content-Type: application/json"   -d '{"username":"inteun","password":"cintaagip","first_name":"Inten","last_name":"Wifey"}'
+
+```

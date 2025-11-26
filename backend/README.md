@@ -6,45 +6,52 @@ A comprehensive Go backend API for MonMan, designed specifically for Indonesian 
 
 ### Prerequisites
 - Go 1.21+
-- PostgreSQL 13+
-- `psql` client (for migrations)
+- Docker & Docker Compose (recommended)
+- PostgreSQL client (`psql`) for direct database access
 
-### 1. Environment Setup
+### 1. Database Setup (Docker - Recommended)
 ```bash
-# Copy environment template
-cp .env.example .env
+# Start PostgreSQL in Docker
+docker-compose -f docker-compose.dev.yml up -d
 
-# Edit database credentials and other settings
+# Verify database is running
+docker ps
+# Should show: monman-db-dev with PostgreSQL 16
+```
+
+### 2. Environment Configuration
+```bash
+# Environment already configured for Docker setup:
 # DB_HOST=localhost
 # DB_PORT=5432
-# DB_NAME=monman
-# DB_USER=postgres
-# DB_PASSWORD=postgres
+# DB_NAME=monman_db
+# DB_USER=monman_user
+# DB_PASSWORD=monman_pass
+# JWT_SECRET=your-secret-key
 ```
 
-### 2. Database Setup
+### 3. Run Database Migrations
 ```bash
-# Create database (if not exists)
-createdb monman
+# Run all migrations to create tables and seed data
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f migrations/0001_init.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f migrations/0002_seed_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f migrations/0003_sample_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f migrations/0004_seed_users.sql
 
-# Run migrations
-./scripts/migrate.sh
-
-# This will:
-# - Create all tables with proper schema
-# - Insert Indonesian default categories
-# - Add sample development data
+# Verify setup
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c "\dt"
+# Should show 9 tables: users, accounts, categories, transactions, etc.
 ```
 
-### 3. Start Development Server
+### 4. Start Development Server
 ```bash
-# Install dependencies
+# From backend directory
+cd backend
 go mod tidy
-
-# Run server
 go run cmd/server/main.go
 
 # Server starts on http://localhost:8080
+# Test: curl http://localhost:8080/health
 ```
 
 ## 🏗️ Architecture Overview
