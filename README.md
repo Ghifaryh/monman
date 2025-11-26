@@ -255,11 +255,3 @@ This is a personal learning project, but feedback and suggestions are welcome! P
 ## 📄 License
 
 Personal project for learning purposes. Code available for educational reference.
-
-
-```cmd
-curl -X POST http://localhost:8080/api/auth/register   -H "Content-Type: application/json"   -d '{"username":"gip","password":"giproot","first_name":"Ghifary","last_name":"The Husband"}'
-
-curl -X POST http://localhost:8080/api/auth/register   -H "Content-Type: application/json"   -d '{"username":"inteun","password":"cintaagip","first_name":"Inten","last_name":"Wifey"}'
-
-```
