@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { apiRequest } from '../api/client';
+import { login } from '../api/client';
+import { useRouter, useSearch } from '@tanstack/react-router';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const search = useSearch({ from: "/login" });
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -13,21 +17,18 @@ export default function LoginPage() {
     setMessage('');
 
     try {
-      const response = await apiRequest<{
-        message: string;
-        username: string;
-        status: string;
-        note: string;
-      }>('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
+      const response = await login(username, password);
 
-      setMessage(`✅ Connection successful! Backend received username: ${response.username}`);
-      console.log('Backend response:', response);
+      setMessage(`✅ Login successful! Welcome ${response.user.first_name}!`);
+      console.log('Login response:', response);
+
+      // Token is automatically stored by the login function
+
+      // Redirect to intended destination or dashboard
+      const redirectTo = (search as Record<string, unknown>)?.redirect as string || '/';
+      setTimeout(() => {
+        router.navigate({ to: redirectTo });
+      }, 1000); // Small delay to show success message
 
       // Clear form
       setUsername('');

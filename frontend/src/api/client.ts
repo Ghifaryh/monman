@@ -46,11 +46,116 @@ export async function authenticatedRequest<T>(
 ): Promise<T> {
   const token = getAuthToken();
 
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   return apiRequest<T>(endpoint, {
     ...options,
     headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
+      Authorization: `Bearer ${token}`,
       ...options.headers,
     },
   });
+}
+
+// API response types
+export interface ApiResponse<T> {
+  status: string;
+  message?: string;
+  data?: T;
+  error?: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface User {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Authentication API calls
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const response = await apiRequest<ApiResponse<LoginResponse>>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (response.status !== 'success' || !response.data) {
+    throw new Error(response.error || 'Login failed');
+  }
+
+  // Store token
+  setAuthToken(response.data.token);
+
+  return response.data;
+}
+
+export async function register(userData: {
+  username: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+}): Promise<LoginResponse> {
+  const response = await apiRequest<ApiResponse<LoginResponse>>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+
+  if (response.status !== 'success' || !response.data) {
+    throw new Error(response.error || 'Registration failed');
+  }
+
+  // Store token
+  setAuthToken(response.data.token);
+
+  return response.data;
+}
+
+export async function getProfile(): Promise<User> {
+  const response = await authenticatedRequest<ApiResponse<{ user: User }>>('/api/profile');
+
+  if (response.status !== 'success' || !response.data) {
+    throw new Error(response.error || 'Failed to get profile');
+  }
+
+  return response.data.user;
+}
+
+export async function refreshToken(): Promise<string> {
+  const response = await authenticatedRequest<ApiResponse<{ token: string }>>('/api/refresh-token', {
+    method: 'POST',
+  });
+
+  if (response.status !== 'success' || !response.data) {
+    throw new Error(response.error || 'Failed to refresh token');
+  }
+
+  const newToken = response.data.token;
+  setAuthToken(newToken);
+
+  return newToken;
+}
+
+// Logout function
+export function logout(): void {
+  removeAuthToken();
 }

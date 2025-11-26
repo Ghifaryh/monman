@@ -1,9 +1,12 @@
 import { Outlet, Link, useLocation } from "@tanstack/react-router";
 import { useState, useEffect } from 'react';
+import { logout } from '../api/client';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/index.css'
 
 function App() {
   const location = useLocation();
+  const { user } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Check localStorage or system preference on initial load
     const saved = localStorage.getItem('theme');
@@ -24,10 +27,12 @@ function App() {
 
     // Update localStorage
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  }; const handleLogout = () => {
-    // TODO: Implement actual logout logic
+  };
+
+  const handleLogout = () => {
     console.log('Logging out...');
-    localStorage.removeItem('authToken');
+    // Use the proper logout function from API client
+    logout();
     // Navigate to login page
     window.location.href = '/login';
   };
@@ -46,6 +51,13 @@ function App() {
       {/* Mobile Header */}
       <header className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center px-4 py-3 relative">
+          {/* User Info - Left Side */}
+          <div className="flex items-center">
+            <span className="text-sm text-gray-600">
+              Hi, {user?.first_name || 'User'}!
+            </span>
+          </div>
+
           {/* Centered Title */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <h1 className="text-xl font-bold text-gray-900">MonMan</h1>
@@ -114,11 +126,15 @@ function App() {
               {/* User Info */}
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">U</span>
+                  <span className="text-sm font-medium text-white">
+                    {user?.first_name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">User</p>
-                  <p className="text-xs text-gray-500">View profile</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                  <p className="text-xs text-gray-500">@{user?.username}</p>
                 </div>
               </div>
 

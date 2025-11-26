@@ -66,3 +66,13 @@ func WriteInternalServerError(w http.ResponseWriter, message string) {
 	}
 	WriteError(w, http.StatusInternalServerError, message)
 }
+
+// WriteErrorResponse is an alias for WriteError to match API handler usage
+func WriteErrorResponse(w http.ResponseWriter, message string, statusCode int) {
+	WriteError(w, statusCode, message)
+}
+
+// WriteJSONResponse writes a raw JSON response with status code
+func WriteJSONResponse(w http.ResponseWriter, data interface{}, statusCode int) {
+	WriteJSON(w, statusCode, data)
+}

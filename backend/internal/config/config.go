@@ -44,9 +44,9 @@ func Load() *Config {
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvAsInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASS", "postgres"),
-			DBName:   getEnv("DB_NAME", "money"),
+			User:     getEnv("DB_USER", "monman_user"),
+			Password: getEnv("DB_PASSWORD", "monman_pass"),
+			DBName:   getEnv("DB_NAME", "monman_db"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		JWT: JWTConfig{

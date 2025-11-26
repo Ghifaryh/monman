@@ -3,6 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 
 	"monman-backend/internal/models"
 	"monman-backend/internal/repository"
@@ -21,6 +23,16 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 	return &UserService{
 		userRepo: userRepo,
 	}
+}
+
+// getBcryptCost returns the bcrypt cost from environment or default to 12
+func getBcryptCost() int {
+	if costStr := os.Getenv("BCRYPT_COST"); costStr != "" {
+		if cost, err := strconv.Atoi(costStr); err == nil && cost >= 4 && cost <= 31 {
+			return cost
+		}
+	}
+	return 12 // Safe default
 }
 
 // CreateUser creates a new user with encrypted password
@@ -45,8 +57,8 @@ func (s *UserService) CreateUser(req *models.CreateUserRequest) (*models.User, e
 		}
 	}
 
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// Hash password using configured cost
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), getBcryptCost())
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}

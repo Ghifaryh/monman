@@ -8,11 +8,10 @@ import ComponentShowcase from "../components/ComponentShowcase";
 import DashboardPage from "../pages/DashboardPage";
 import TransactionsPage from "../pages/TransactionsPage";
 
-// Simple auth check function - you'll implement this based on your auth logic
+// Authentication check function using the correct token key
 const isAuthenticated = (): boolean => {
-  // For now, check if there's a token in localStorage
-  // Replace this with your actual authentication logic
-  const token = localStorage.getItem('authToken');
+  // Check if there's a token in localStorage (matches client.ts)
+  const token = localStorage.getItem('auth_token');
   return !!token;
 };
 
@@ -31,19 +30,19 @@ const appLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "app",
   component: App,
-  // beforeLoad: () => {
-  //   // Check if user is authenticated before loading any protected route
-  //   if (!isAuthenticated()) {
-  //     // Redirect to login if not authenticated
-  //     throw redirect({
-  //       to: '/login',
-  //       search: {
-  //         // Optional: store the intended destination for post-login redirect
-  //         redirect: window.location.pathname,
-  //       },
-  //     });
-  //   }
-  // },
+  beforeLoad: ({ location }) => {
+    // Check if user is authenticated before loading any protected route
+    if (!isAuthenticated()) {
+      // Redirect to login if not authenticated
+      throw redirect({
+        to: '/login',
+        search: {
+          // Store the intended destination for post-login redirect
+          redirect: location.pathname,
+        },
+      });
+    }
+  },
 });
 
 // 3. Home route (uses main app layout)
