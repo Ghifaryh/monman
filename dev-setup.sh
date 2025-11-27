@@ -20,13 +20,37 @@ docker-compose -f docker-compose.dev.yml up -d
 
 # Wait for database to be ready
 echo "⏳ Waiting for database to be ready..."
-sleep 5
+sleep 10
 
-# Check database health
 if docker-compose -f docker-compose.dev.yml ps | grep -q "healthy"; then
     echo "✅ Database is ready!"
+
+    # Check if database already has tables (avoid duplicate migrations)
+    echo "🔍 Checking if database needs migration..."
+    table_count=$(PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ' || echo "0")
+
+    if [ "$table_count" -gt 0 ]; then
+        echo "📊 Database already has $table_count tables - skipping migrations"
+        echo "💡 To reset database: docker-compose -f docker-compose.dev.yml down -v && ./dev-setup.sh"
+    else
+        echo "📄 Running database migrations (safe to re-run)..."
+        if [ -f "backend/scripts/migrate.sh" ]; then
+            cd backend && bash scripts/migrate.sh && cd ..
+            echo "✅ Database migrations completed!"
+        else
+            echo "⚠️  Migration script not found, running migrations manually..."
+            PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
+            PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0002_seed_data.sql
+            PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0003_sample_data.sql
+            PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_seed_users.sql
+            echo "✅ Manual migrations completed!"
+        fi
+    fi
+
+    echo ""
+    echo "🎉 Development environment ready!"
 else
-    echo "⚠️  Database might still be starting..."
+    echo "⚠️  Database might still be starting, you may need to run migrations manually"
 fi
 
 echo ""

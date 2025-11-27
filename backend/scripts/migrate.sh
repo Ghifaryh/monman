@@ -6,11 +6,12 @@
 set -e  # Exit on any error
 
 # Configuration from environment variables or defaults
+# Updated to match Docker development setup
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-monman}"
-DB_USER="${DB_USER:-postgres}"
-DB_PASSWORD="${DB_PASSWORD:-postgres}"
+DB_NAME="${DB_NAME:-monman_db}"
+DB_USER="${DB_USER:-monman_user}"
+DB_PASSWORD="${DB_PASSWORD:-monman_pass}"
 
 # Connection string
 DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"

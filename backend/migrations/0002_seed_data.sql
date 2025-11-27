@@ -1,5 +1,9 @@
 -- Seed Data for MonMan
 -- Default categories and sample data for Indonesian personal finance management
+-- This migration is idempotent - safe to run multiple times
+
+-- Clear existing system categories first to ensure clean state
+DELETE FROM categories WHERE is_system = true;
 
 -- Insert default expense categories
 INSERT INTO categories (id, name, category_type, icon, color, is_system, is_active) VALUES
