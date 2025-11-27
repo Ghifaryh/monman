@@ -15,7 +15,6 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    date_of_birth DATE,
     profile_picture_url TEXT,
     is_active BOOLEAN DEFAULT true,
     email_verified_at TIMESTAMP WITH TIME ZONE,
@@ -88,7 +87,7 @@ CREATE TABLE transfer_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- Budget categories - Budget management with person responsibility
+-- Budget categories - Budget management with person responsibility and UI customization
 CREATE TABLE budgets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -103,8 +102,17 @@ CREATE TABLE budgets (
     auto_reset BOOLEAN DEFAULT true, -- Auto reset when period ends
     alert_percentage INTEGER DEFAULT 80, -- Alert when spent reaches this percentage
     is_active BOOLEAN DEFAULT true,
+
+    -- UI customization fields for Indonesian budget management
+    icon VARCHAR(10) DEFAULT '📱', -- Emoji or icon identifier (🛒, ⛽, 💡)
+    color VARCHAR(20) DEFAULT 'blue', -- Color scheme for UI (blue, yellow, green, etc.)
+    sort_order INTEGER DEFAULT 0, -- For custom ordering in UI
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+    -- Ensure one budget per name per user
+    CONSTRAINT unique_user_budget_name UNIQUE (user_id, name)
 );
 
 -- Income sources - Different types of income (Gaji, Tukin, Freelance, etc.)
@@ -156,6 +164,36 @@ CREATE TABLE user_sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Budget common purchases - Pre-configured purchase suggestions for budget categories
+CREATE TABLE budget_common_purchases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    budget_id UUID NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+    item VARCHAR(200) NOT NULL, -- e.g., "Indomie Goreng", "Bensin Premium"
+    quantity VARCHAR(50), -- e.g., "× 5", "1/2 kg", "Rp 20.000"
+    estimated_amount BIGINT NOT NULL, -- Estimated price in cents
+    store VARCHAR(200), -- e.g., "Indomaret", "SPBU Shell"
+    is_frequently_used BOOLEAN DEFAULT true, -- Show in quick-add suggestions
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Budget transactions - Enhanced transaction tracking with budget-specific metadata
+CREATE TABLE budget_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    budget_id UUID NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    item VARCHAR(200) NOT NULL, -- Specific item purchased
+    quantity VARCHAR(50), -- Quantity with unit (e.g., "× 5", "1 kg")
+    store VARCHAR(200), -- Where the purchase was made
+    unit_price BIGINT, -- Price per unit in cents (optional)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+    -- Ensure one budget transaction record per transaction
+    CONSTRAINT unique_transaction_budget UNIQUE (transaction_id)
+);
+
 -- Indexes for better query performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);
@@ -169,9 +207,15 @@ CREATE INDEX idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date DESC);
 CREATE INDEX idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX idx_budgets_period ON budgets(period_start_date, period_end_date);
+CREATE INDEX idx_budgets_user_active ON budgets(user_id, is_active);
 CREATE INDEX idx_income_sources_user_id ON income_sources(user_id);
 CREATE INDEX idx_user_sessions_token ON user_sessions(session_token);
 CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id, is_active);
+CREATE INDEX idx_budget_common_purchases_budget ON budget_common_purchases(budget_id);
+CREATE INDEX idx_budget_common_purchases_frequently_used ON budget_common_purchases(budget_id, is_frequently_used);
+CREATE INDEX idx_budget_transactions_budget ON budget_transactions(budget_id);
+CREATE INDEX idx_budget_transactions_user ON budget_transactions(user_id);
+CREATE INDEX idx_budget_transactions_transaction ON budget_transactions(transaction_id);
 
 -- Triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -201,4 +245,7 @@ CREATE TRIGGER update_income_sources_updated_at BEFORE UPDATE ON income_sources
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_recurring_transactions_updated_at BEFORE UPDATE ON recurring_transactions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_budget_common_purchases_updated_at BEFORE UPDATE ON budget_common_purchases
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

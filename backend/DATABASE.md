@@ -101,29 +101,68 @@ Key Fields:
 - created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
-### 5. `budgets` - Budget Management
-Category-based budgets with person responsibility.
+### 5. `budgets` - Enhanced Budget Management
+Category-based budgets with person responsibility and Indonesian UI customization.
 
 ```sql
-Key Fields:
+Core Fields:
 - id: UUID (Primary Key)
 - user_id: UUID NOT NULL (FK to users ON DELETE CASCADE)
 - category_id: UUID NOT NULL (FK to categories ON DELETE CASCADE)
-- name: VARCHAR(100) NOT NULL e.g., "Gas Budget Mingguan"
+- name: VARCHAR(100) NOT NULL e.g., "Belanja Bulanan", "Bensin Motor"
 - allocated_amount: BIGINT NOT NULL (budget amount in cents)
-- spent_amount: BIGINT DEFAULT 0 (current spent amount in cents)
+- spent_amount: BIGINT DEFAULT 0 (current spent amount in cents, auto-calculated)
 - budget_period: VARCHAR(20) NOT NULL CHECK - "weekly", "monthly", "yearly"
 - period_start_date, period_end_date: DATE NOT NULL
 - responsible_person: VARCHAR(50) - "husband", "wife", "both", or person name
 - auto_reset: BOOLEAN DEFAULT true (auto reset when period ends)
 - alert_percentage: INTEGER DEFAULT 80 (alert when spent reaches this percentage)
 - is_active: BOOLEAN DEFAULT true
+
+UI Enhancement Fields:
+- icon: VARCHAR(10) DEFAULT '📱' (emoji icons: 🛒, ⛽, 💡)
+- color: VARCHAR(20) DEFAULT 'blue' (UI color scheme)
+- sort_order: INTEGER DEFAULT 0 (custom ordering for UI)
 - created_at, updated_at: TIMESTAMP WITH TIME ZONE
+- CONSTRAINT unique_user_budget_name UNIQUE (user_id, name)
+```
+
+### 6. `budget_common_purchases` - Purchase Presets
+Pre-configured purchase suggestions for Indonesian shopping patterns.
+
+```sql
+Key Fields:
+- id: UUID (Primary Key)
+- budget_id: UUID NOT NULL (FK to budgets ON DELETE CASCADE)
+- item: VARCHAR(200) NOT NULL e.g., "Indomie Goreng", "Bensin Premium"
+- quantity: VARCHAR(50) e.g., "× 5", "1 kg", "Rp 20.000"
+- estimated_amount: BIGINT NOT NULL (estimated price in cents)
+- store: VARCHAR(200) e.g., "Indomaret", "SPBU Shell"
+- is_frequently_used: BOOLEAN DEFAULT true (show in quick-add suggestions)
+- sort_order: INTEGER DEFAULT 0
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
+```
+
+### 7. `budget_transactions` - Detailed Budget Tracking
+Enhanced transaction tracking with budget-specific metadata for item-level expense tracking.
+
+```sql
+Key Fields:
+- id: UUID (Primary Key)
+- transaction_id: UUID NOT NULL (FK to transactions ON DELETE CASCADE)
+- budget_id: UUID NOT NULL (FK to budgets ON DELETE CASCADE)
+- user_id: UUID NOT NULL (FK to users ON DELETE CASCADE)
+- item: VARCHAR(200) NOT NULL (specific item purchased)
+- quantity: VARCHAR(50) (quantity with unit: "× 5", "1 kg")
+- store: VARCHAR(200) (where the purchase was made)
+- unit_price: BIGINT (price per unit in cents, optional)
+- created_at: TIMESTAMP WITH TIME ZONE
+- CONSTRAINT unique_transaction_budget UNIQUE (transaction_id)
 ```
 
 ## Advanced Features
 
-### 6. `income_sources` - Income Management
+### 8. `income_sources` - Income Management
 Track different types of Indonesian income (Gaji, Tukin, Freelance).
 
 ```sql
@@ -136,13 +175,13 @@ Key Fields:
 - next_expected_date: DATE
 ```
 
-### 7. `transfer_transactions` - Account Transfers
+### 9. `transfer_transactions` - Account Transfers
 Handle transfers between user accounts.
 
-### 8. `recurring_transactions` - Recurring Templates
+### 10. `recurring_transactions` - Recurring Templates
 Templates for automatic recurring transaction creation.
 
-### 9. `user_sessions` - Authentication
+### 11. `user_sessions` - Authentication
 JWT session management with refresh tokens.
 
 ## Database Triggers & Automation
@@ -190,10 +229,48 @@ The database comes pre-populated with comprehensive Indonesian categories:
 - **Bisnis Sampingan** - Side business
 - **Investasi** - Investment returns
 
+## Budget Management System
+
+### Indonesian Budget Categories
+The database includes realistic Indonesian budget categories with UI customization:
+
+| Name | Icon | Allocated | Period | Features |
+|------|------|-----------|---------|----------|
+| Belanja Bulanan | 🛒 | Rp 1,500,000 | monthly | Groceries, household items |
+| Bensin Motor | ⛽ | Rp 200,000 | weekly | Gas for motorcycles |
+| Listrik & Air | 💡 | Rp 500,000 | monthly | Utilities (electricity, water) |
+| Internet & Pulsa | 📱 | Rp 150,000 | monthly | Internet and phone credit |
+| Transportasi | 🚗 | Rp 300,000 | monthly | Transportation costs |
+| Makan di Luar | 🍽️ | Rp 400,000 | monthly | Dining out |
+| Kesehatan | 💊 | Rp 250,000 | monthly | Healthcare expenses |
+| Pendidikan | 📚 | Rp 200,000 | monthly | Education costs |
+
+### Common Purchase Presets (22 items total)
+**Indonesian Shopping Patterns:**
+- **Belanja Bulanan**: Beras 5kg (Rp 75,000) - Pasar Minggu, Minyak Goreng 1L (Rp 25,000) - Indomaret
+- **Bensin Motor**: Premium Rp 20,000 - SPBU Shell, Pertalite Rp 15,000 - SPBU Pertamina
+- **Listrik & Air**: Token Listrik Rp 100,000 - Mobile Banking, Tagihan Air PDAM (Bulanan)
+- **Internet & Pulsa**: Paket Internet 30GB - MyTelkomsel, Pulsa Rp 25,000 - Indomaret
+
+### Budget Management Features
+✅ **UI Component Support:**
+- `BudgetSettingsPage`: Category creation with icons, colors, periods, person responsibility
+- `BudgetCategoryCard`: Item-level tracking, common purchases, Indonesian context
+- Real-time spending calculations and budget alerts
+- Period-based budget tracking (weekly/monthly/yearly)
+- Person responsibility assignment (husband/wife/both)
+
+✅ **Indonesian Context:**
+- Rupiah currency stored in cents for precision
+- Local store names (Indomaret, SPBU Shell, Pasar Minggu)
+- Indonesian product names and quantities
+- Flexible quantity tracking ("× 5", "1 kg", "Rp 20.000")
+
 ## Migration Files
 
 ### `0001_init.sql` - Core Schema
-- Creates all tables with proper constraints
+- Creates all tables including enhanced budgets with UI fields
+- Includes budget_common_purchases and budget_transactions tables
 - Sets up indexes for query performance
 - Creates database functions and triggers
 - Includes comprehensive comments and documentation
@@ -208,6 +285,11 @@ The database comes pre-populated with comprehensive Indonesian categories:
 - Sample accounts, transactions, budgets
 - Realistic Indonesian transaction data
 - Perfect for frontend development and testing
+
+### `0004_indonesian_budget_data.sql` - Budget Seed Data
+- Indonesian budget categories with UI customization
+- 22 common purchase presets with realistic prices
+- Indonesian store names and shopping patterns
 
 ## Usage Instructions
 
@@ -224,6 +306,7 @@ docker-compose -f docker-compose.dev.yml up -d
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0002_seed_data.sql
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0003_sample_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_indonesian_budget_data.sql
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_seed_users.sql
 
 # Option 3: Using migration script (after updating environment variables)
@@ -294,10 +377,49 @@ transaction := models.Transaction{
 
 ## API Integration
 
-The database is designed to support the React frontend with:
-- Proper JSON serialization through struct tags
-- Computed fields for formatting (formatted_balance, etc.)
-- Helper methods for business logic
-- DTO structs for API requests/responses
+### Backend API Endpoints
+Based on the consolidated budget system, the backend should implement:
 
-This comprehensive schema provides the foundation for a full-featured Indonesian personal finance management application with proper data integrity, performance, and cultural context.
+**Budget Management:**
+- `GET /api/budgets` - List all budgets with stats
+- `POST /api/budgets` - Create new budget
+- `PUT /api/budgets/{id}` - Update budget
+- `DELETE /api/budgets/{id}` - Delete budget
+
+**Common Purchases:**
+- `GET /api/budgets/{id}/common-purchases` - Get purchase presets
+- `POST /api/budgets/{id}/common-purchases` - Add preset
+- `PUT /api/budget/common-purchases/{id}` - Update preset
+- `DELETE /api/budget/common-purchases/{id}` - Delete preset
+
+**Budget Transactions:**
+- `POST /api/budget/transactions` - Add expense to budget
+- `GET /api/budgets/{id}/transactions` - Get budget transactions
+- `PUT /api/budget/transactions/{id}` - Update transaction
+- `DELETE /api/budget/transactions/{id}` - Delete transaction
+
+**Analytics:**
+- `GET /api/budget/summary` - Overall budget summary
+- `GET /api/budgets/{id}/analytics` - Budget-specific analytics
+
+### Go Model Integration
+The database is designed to support the React frontend with:
+- Proper JSON serialization through struct tags in `internal/models/budget.go`
+- Computed fields for UI (remaining_amount, transaction_count, etc.)
+- Helper methods for Indonesian currency formatting
+- Request/Response DTOs for API endpoints
+- Comprehensive validation using struct tags
+
+### Development Status
+✅ **Complete Database Structure**: Enhanced budgets table with UI fields, supporting tables, and constraints
+✅ **Indonesian Sample Data**: Realistic budget categories and common purchases loaded
+✅ **Go Models**: Complete Budget model definitions in `internal/models/budget.go`
+✅ **Migration Scripts**: Idempotent migrations safe for re-running
+
+### Next Steps
+1. **Backend**: Implement repository and service layers using the Budget models
+2. **API Routes**: Create RESTful endpoints for budget management
+3. **Frontend**: Connect existing UI components (`BudgetSettingsPage`, `BudgetCategoryShowcase`) to new API endpoints
+4. **Testing**: Validate data flow between database → API → UI components
+
+This comprehensive schema provides the foundation for a full-featured Indonesian personal finance management application with proper data integrity, performance, cultural context, and complete budget management capabilities.

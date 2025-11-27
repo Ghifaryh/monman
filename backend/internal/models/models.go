@@ -91,37 +91,6 @@ type Transaction struct {
 	AbsoluteAmount  int64     `json:"absolute_amount" db:"-"`  // Absolute value of amount
 }
 
-// Budget represents budget categories with person responsibility
-// Supports Indonesian family financial management patterns
-type Budget struct {
-	ID                uuid.UUID `json:"id" db:"id"`
-	UserID            uuid.UUID `json:"user_id" db:"user_id"`
-	CategoryID        uuid.UUID `json:"category_id" db:"category_id"`
-	Name              string    `json:"name" db:"name"`                         // e.g., "Gas Budget Mingguan"
-	AllocatedAmount   int64     `json:"allocated_amount" db:"allocated_amount"` // Budget amount in cents
-	SpentAmount       int64     `json:"spent_amount" db:"spent_amount"`         // Current spent amount in cents
-	BudgetPeriod      string    `json:"budget_period" db:"budget_period"`       // "weekly", "monthly", "yearly"
-	PeriodStartDate   time.Time `json:"period_start_date" db:"period_start_date"`
-	PeriodEndDate     time.Time `json:"period_end_date" db:"period_end_date"`
-	ResponsiblePerson *string   `json:"responsible_person,omitempty" db:"responsible_person"` // "husband", "wife", "both"
-	AutoReset         bool      `json:"auto_reset" db:"auto_reset"`
-	AlertPercentage   int       `json:"alert_percentage" db:"alert_percentage"`
-	IsActive          bool      `json:"is_active" db:"is_active"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
-
-	// Related data and computed fields
-	Category           *Category `json:"category,omitempty" db:"-"`
-	RemainingAmount    int64     `json:"remaining_amount" db:"-"`    // Calculated: allocated - spent
-	FormattedAllocated string    `json:"formatted_allocated" db:"-"` // Indonesian Rupiah format
-	FormattedSpent     string    `json:"formatted_spent" db:"-"`     // Indonesian Rupiah format
-	FormattedRemaining string    `json:"formatted_remaining" db:"-"` // Indonesian Rupiah format
-	SpentPercentage    float64   `json:"spent_percentage" db:"-"`    // Percentage of budget used
-	OverBudget         bool      `json:"is_over_budget" db:"-"`      // True if spent > allocated
-	AlertRequired      bool      `json:"should_alert" db:"-"`        // True if spent >= alert percentage
-	DaysRemaining      int       `json:"days_remaining" db:"-"`      // Days until period ends
-}
-
 // IncomeSource represents different types of income with Indonesian context
 type IncomeSource struct {
 	ID               uuid.UUID  `json:"id" db:"id"`
@@ -195,16 +164,6 @@ type CreateTransactionRequest struct {
 	LocationName     string    `json:"location_name,omitempty"`
 	IsRecurring      bool      `json:"is_recurring,omitempty"`
 	RecurringPattern string    `json:"recurring_pattern,omitempty" validate:"omitempty,oneof=daily weekly monthly yearly"`
-}
-
-// CreateBudgetRequest represents the request for creating a budget
-type CreateBudgetRequest struct {
-	CategoryID        uuid.UUID `json:"category_id" validate:"required"`
-	Name              string    `json:"name" validate:"required,min=1,max=100"`
-	AllocatedAmount   int64     `json:"allocated_amount" validate:"required,gt=0"`
-	BudgetPeriod      string    `json:"budget_period" validate:"required,oneof=weekly monthly yearly"`
-	ResponsiblePerson string    `json:"responsible_person,omitempty"`
-	AlertPercentage   int       `json:"alert_percentage,omitempty" validate:"omitempty,min=1,max=100"`
 }
 
 // DashboardResponse represents the dashboard summary data
