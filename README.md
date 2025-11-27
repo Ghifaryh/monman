@@ -182,7 +182,21 @@ bun run type-check
 bun run lint
 ```
 
-### Database Operations
+### Database Management
+
+#### Daily Development Workflow
+```bash
+# Start database (first time or after computer restart)
+docker-compose -f docker-compose.dev.yml up -d
+
+# Stop database at end of day (data preserved)
+docker-compose -f docker-compose.dev.yml down
+
+# Next day - start again (all data still there)
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+#### Database Operations
 ```bash
 # Connect to PostgreSQL (Docker container)
 docker exec -it monman-db-dev psql -U monman_user -d monman_db
@@ -199,12 +213,15 @@ PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c 
 # Run specific migration
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
 
-# Reset database completely (for schema changes during development)
-./reset-db.sh
+# Stop database (keeps all data for next restart)
+docker-compose -f docker-compose.dev.yml down     # Safe shutdown - data persists
 
-# Manual reset steps
-docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume
-./dev-setup.sh                                    # Start fresh with migrations
+# Reset database completely (for schema changes during development)
+docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume (deletes all data)
+./dev-setup.sh                                    # Required: Start fresh with migrations
+
+# Convenient reset script
+./reset-db.sh                                     # Automated down -v + setup
 ```
 
 ## 🎯 Learning Objectives
