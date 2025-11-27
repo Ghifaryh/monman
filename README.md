@@ -62,6 +62,7 @@ This project serves as a practical learning experience for:
 - **Docker & Docker Compose** (recommended)
 - **Go 1.21+** (for backend development)
 - **Bun** (for frontend development)
+- **PostgreSQL client** (`psql`) for database operations
 
 ### Quick Start
 
@@ -142,6 +143,8 @@ monman/
 │   ├── package.json
 │   └── vite.config.ts
 ├── docker-compose.yml
+├── dev-setup.sh            # Automated development setup
+├── reset-db.sh              # Database reset script
 └── README.md
 ```
 
@@ -195,6 +198,13 @@ PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c 
 
 # Run specific migration
 PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
+
+# Reset database completely (for schema changes during development)
+./reset-db.sh
+
+# Manual reset steps
+docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume
+./dev-setup.sh                                    # Start fresh with migrations
 ```
 
 ## 🎯 Learning Objectives

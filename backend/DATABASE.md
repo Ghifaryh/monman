@@ -32,11 +32,16 @@ Core user authentication and profile information.
 ```sql
 Key Fields:
 - id: UUID (Primary Key)
-- email: VARCHAR(255) UNIQUE
-- password_hash: TEXT (never exposed in API)
-- first_name, last_name: VARCHAR(100)
-- is_active: BOOLEAN
-- email_verified_at: TIMESTAMP (nullable)
+- username: VARCHAR(50) UNIQUE NOT NULL (Primary login identifier)
+- email: VARCHAR(255) UNIQUE (Optional for notifications/recovery)
+- password_hash: TEXT NOT NULL (never exposed in API)
+- first_name, last_name: VARCHAR(100) NOT NULL
+- phone: VARCHAR(20) (optional)
+- date_of_birth: DATE (optional)
+- profile_picture_url: TEXT (optional)
+- is_active: BOOLEAN DEFAULT true
+- email_verified_at: TIMESTAMP WITH TIME ZONE (nullable)
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
 ### 2. `accounts` - Financial Accounts
@@ -44,14 +49,18 @@ Bank accounts, credit cards, cash, e-wallets, etc.
 
 ```sql
 Key Fields:
-- user_id: UUID (FK to users)
-- name: VARCHAR(100) e.g., "Rekening Utama", "Kartu Kredit BCA"
-- account_type: VARCHAR(50) - "bank", "credit_card", "cash", "ewallet"
+- id: UUID (Primary Key)
+- user_id: UUID NOT NULL (FK to users ON DELETE CASCADE)
+- name: VARCHAR(100) NOT NULL e.g., "Rekening Utama", "Kartu Kredit BCA"
+- account_type: VARCHAR(50) NOT NULL - "bank", "credit_card", "cash", "investment", "ewallet"
 - bank_name: VARCHAR(100) - "BCA", "Mandiri", "BNI"
-- balance: BIGINT (in cents)
-- credit_limit: BIGINT (for credit cards)
-- is_default: BOOLEAN
-- color: VARCHAR(7) (hex color for UI)
+- account_number: VARCHAR(50) (optional)
+- balance: BIGINT NOT NULL DEFAULT 0 (in cents)
+- credit_limit: BIGINT (for credit cards, in cents)
+- is_default: BOOLEAN DEFAULT false
+- color: VARCHAR(7) DEFAULT '#3B82F6' (hex color for UI)
+- is_active: BOOLEAN DEFAULT true
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
 ### 3. `categories` - Transaction Categories
@@ -59,13 +68,16 @@ Hierarchical categories for income and expenses.
 
 ```sql
 Key Fields:
-- user_id: UUID (nullable for system categories)
-- name: VARCHAR(100) e.g., "Makanan & Minuman"
-- category_type: VARCHAR(20) - "income" or "expense"
-- parent_category_id: UUID (for subcategories)
-- icon: VARCHAR(50) (UI icon identifier)
-- color: VARCHAR(7) (hex color)
-- is_system: BOOLEAN (system-provided categories)
+- id: UUID (Primary Key)
+- user_id: UUID (nullable for system categories, FK ON DELETE CASCADE)
+- name: VARCHAR(100) NOT NULL e.g., "Makanan & Minuman"
+- category_type: VARCHAR(20) NOT NULL CHECK - "income" or "expense"
+- parent_category_id: UUID (for subcategories, FK to categories)
+- icon: VARCHAR(50) DEFAULT 'dollar-sign' (UI icon identifier)
+- color: VARCHAR(7) DEFAULT '#6B7280' (hex color)
+- is_system: BOOLEAN DEFAULT false (system-provided categories)
+- is_active: BOOLEAN DEFAULT true
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
 ### 4. `transactions` - Financial Transactions
@@ -73,15 +85,20 @@ Core transaction data with full Indonesian context.
 
 ```sql
 Key Fields:
-- user_id, account_id, category_id: UUIDs (foreign keys)
-- amount: BIGINT (negative for expenses, positive for income)
-- description: TEXT
-- transaction_type: VARCHAR(20) - "income", "expense", "transfer"
-- transaction_date: DATE
-- location_name: VARCHAR(200) e.g., "Shell Senayan"
-- is_recurring: BOOLEAN
+- id: UUID (Primary Key)
+- user_id: UUID NOT NULL (FK to users ON DELETE CASCADE)
+- account_id: UUID NOT NULL (FK to accounts ON DELETE CASCADE)
+- category_id: UUID (FK to categories, nullable)
+- amount: BIGINT NOT NULL (negative for expenses, positive for income, in cents)
+- description: TEXT NOT NULL
+- transaction_type: VARCHAR(20) NOT NULL CHECK - "income", "expense", "transfer"
+- transaction_date: DATE NOT NULL DEFAULT CURRENT_DATE
 - notes: TEXT (optional)
 - receipt_image_url: TEXT (optional)
+- location_name: VARCHAR(200) e.g., "Shell Senayan"
+- is_recurring: BOOLEAN DEFAULT false
+- recurring_pattern: VARCHAR(20) - "daily", "weekly", "monthly", "yearly"
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
 ### 5. `budgets` - Budget Management
@@ -89,14 +106,19 @@ Category-based budgets with person responsibility.
 
 ```sql
 Key Fields:
-- user_id, category_id: UUIDs
-- name: VARCHAR(100) e.g., "Gas Budget Mingguan"
-- allocated_amount, spent_amount: BIGINT (in cents)
-- budget_period: VARCHAR(20) - "weekly", "monthly", "yearly"
-- period_start_date, period_end_date: DATE
-- responsible_person: VARCHAR(50) - "husband", "wife", "both"
-- auto_reset: BOOLEAN
-- alert_percentage: INTEGER (1-100)
+- id: UUID (Primary Key)
+- user_id: UUID NOT NULL (FK to users ON DELETE CASCADE)
+- category_id: UUID NOT NULL (FK to categories ON DELETE CASCADE)
+- name: VARCHAR(100) NOT NULL e.g., "Gas Budget Mingguan"
+- allocated_amount: BIGINT NOT NULL (budget amount in cents)
+- spent_amount: BIGINT DEFAULT 0 (current spent amount in cents)
+- budget_period: VARCHAR(20) NOT NULL CHECK - "weekly", "monthly", "yearly"
+- period_start_date, period_end_date: DATE NOT NULL
+- responsible_person: VARCHAR(50) - "husband", "wife", "both", or person name
+- auto_reset: BOOLEAN DEFAULT true (auto reset when period ends)
+- alert_percentage: INTEGER DEFAULT 80 (alert when spent reaches this percentage)
+- is_active: BOOLEAN DEFAULT true
+- created_at, updated_at: TIMESTAMP WITH TIME ZONE
 ```
 
 ## Advanced Features
@@ -191,19 +213,35 @@ The database comes pre-populated with comprehensive Indonesian categories:
 
 ### 1. **Running Migrations**
 ```bash
-# Make migration script executable
-chmod +x backend/scripts/migrate.sh
+# Option 1: Automated setup (recommended for new environments)
+./dev-setup.sh
 
-# Run all migrations (requires PostgreSQL client)
+# Option 2: Manual migration with Docker database
+# Start database
+docker-compose -f docker-compose.dev.yml up -d
+
+# Run migrations manually
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0002_seed_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0003_sample_data.sql
+PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_seed_users.sql
+
+# Option 3: Using migration script (after updating environment variables)
 cd backend
+chmod +x scripts/migrate.sh
 ./scripts/migrate.sh
-
-# Or manually with psql
-psql "postgresql://user:pass@host:port/dbname" -f migrations/0001_init.sql
 ```
 
 ### 2. **Environment Variables**
 ```bash
+# Docker Development Setup (current)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=monman_db
+DB_USER=monman_user
+DB_PASSWORD=monman_pass
+
+# Alternative Production Setup
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=monman

@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       const response = await login(username, password);
 
-      setMessage(`✅ Login successful! Welcome ${response.user.first_name}!`);
+      setMessage(`✅ Login successful! Welcome ${response.user.first_name == "Inten" ? "ma Waifu" : response.user.first_name}!`);
       console.log('Login response:', response);
 
       // Token is automatically stored by the login function
