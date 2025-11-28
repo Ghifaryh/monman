@@ -15,6 +15,7 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    date_of_birth DATE,
     profile_picture_url TEXT,
     is_active BOOLEAN DEFAULT true,
     email_verified_at TIMESTAMP WITH TIME ZONE,
