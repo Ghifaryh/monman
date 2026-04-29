@@ -152,20 +152,6 @@ type LoginResponse struct {
 	ExpiresAt    string `json:"expires_at"`
 }
 
-// CreateTransactionRequest represents the request for creating a transaction
-type CreateTransactionRequest struct {
-	AccountID        uuid.UUID `json:"account_id" validate:"required"`
-	CategoryID       uuid.UUID `json:"category_id,omitempty"`
-	Amount           int64     `json:"amount" validate:"required,ne=0"`
-	Description      string    `json:"description" validate:"required,min=1,max=255"`
-	TransactionType  string    `json:"transaction_type" validate:"required,oneof=income expense"`
-	TransactionDate  string    `json:"transaction_date" validate:"required"` // ISO date format
-	Notes            string    `json:"notes,omitempty"`
-	LocationName     string    `json:"location_name,omitempty"`
-	IsRecurring      bool      `json:"is_recurring,omitempty"`
-	RecurringPattern string    `json:"recurring_pattern,omitempty" validate:"omitempty,oneof=daily weekly monthly yearly"`
-}
-
 // DashboardResponse represents the dashboard summary data
 type DashboardResponse struct {
 	TotalBalance       int64              `json:"total_balance"`

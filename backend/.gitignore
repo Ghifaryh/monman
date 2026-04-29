@@ -16,3 +16,9 @@
 
 # Env
 .env
+
+# SQLite — do not commit runtime DBs or WAL sidecars (default SQLITE_PATH=./data/monman.db)
+data/
+*.db
+*.db-shm
+*.db-wal

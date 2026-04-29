@@ -22,12 +22,12 @@ type Budget struct {
 	AutoReset         bool         `json:"auto_reset" db:"auto_reset"`
 	AlertPercentage   int          `json:"alert_percentage" db:"alert_percentage"`
 	IsActive          bool         `json:"is_active" db:"is_active"`
-	
+
 	// UI enhancement fields
 	Icon      string `json:"icon" db:"icon"`
 	Color     string `json:"color" db:"color"`
 	SortOrder int    `json:"sort_order" db:"sort_order"`
-	
+
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
@@ -117,32 +117,18 @@ type BudgetWithStats struct {
 	RecentTransactions []BudgetTransactionView `json:"recent_transactions"`
 }
 
-// CreateBudgetRequest represents the request payload for creating budgets
-type CreateBudgetRequest struct {
-	CategoryID        uuid.UUID    `json:"category_id" validate:"required"`
-	Name              string       `json:"name" validate:"required,min=1,max=100"`
-	AllocatedAmount   int64        `json:"allocated_amount" validate:"required,min=1"`
-	BudgetPeriod      BudgetPeriod `json:"budget_period" validate:"required,oneof=weekly monthly yearly"`
-	ResponsiblePerson *string      `json:"responsible_person,omitempty" validate:"omitempty,max=50"`
-	AutoReset         bool         `json:"auto_reset"`
-	AlertPercentage   int          `json:"alert_percentage" validate:"min=0,max=100"`
-	Icon              string       `json:"icon" validate:"required,min=1,max=10"`
-	Color             string       `json:"color" validate:"required,min=1,max=20"`
-	CommonPurchases   []CreateCommonPurchaseRequest `json:"common_purchases,omitempty"`
-}
-
 // UpdateBudgetRequest represents the request payload for updating budgets
 type UpdateBudgetRequest struct {
-	Name              *string      `json:"name,omitempty" validate:"omitempty,min=1,max=100"`
-	AllocatedAmount   *int64       `json:"allocated_amount,omitempty" validate:"omitempty,min=1"`
+	Name              *string       `json:"name,omitempty" validate:"omitempty,min=1,max=100"`
+	AllocatedAmount   *int64        `json:"allocated_amount,omitempty" validate:"omitempty,min=1"`
 	BudgetPeriod      *BudgetPeriod `json:"budget_period,omitempty" validate:"omitempty,oneof=weekly monthly yearly"`
-	ResponsiblePerson *string      `json:"responsible_person,omitempty" validate:"omitempty,max=50"`
-	AutoReset         *bool        `json:"auto_reset,omitempty"`
-	AlertPercentage   *int         `json:"alert_percentage,omitempty" validate:"omitempty,min=0,max=100"`
-	IsActive          *bool        `json:"is_active,omitempty"`
-	Icon              *string      `json:"icon,omitempty" validate:"omitempty,min=1,max=10"`
-	Color             *string      `json:"color,omitempty" validate:"omitempty,min=1,max=20"`
-	SortOrder         *int         `json:"sort_order,omitempty"`
+	ResponsiblePerson *string       `json:"responsible_person,omitempty" validate:"omitempty,max=50"`
+	AutoReset         *bool         `json:"auto_reset,omitempty"`
+	AlertPercentage   *int          `json:"alert_percentage,omitempty" validate:"omitempty,min=0,max=100"`
+	IsActive          *bool         `json:"is_active,omitempty"`
+	Icon              *string       `json:"icon,omitempty" validate:"omitempty,min=1,max=10"`
+	Color             *string       `json:"color,omitempty" validate:"omitempty,min=1,max=20"`
+	SortOrder         *int          `json:"sort_order,omitempty"`
 }
 
 // CreateCommonPurchaseRequest represents the request payload for creating common purchases

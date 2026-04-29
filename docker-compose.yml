@@ -1,7 +1,7 @@
 version: '3.9'
 
+# API + frontend; SQLite persisted in named volume. Run migrations inside the image or once at startup (see backend README).
 services:
-  # Frontend service
   frontend:
     build: ./frontend
     container_name: monman-frontend
@@ -12,44 +12,19 @@ services:
     environment:
       - NODE_ENV=production
 
-  # Backend API service
   api:
     build: ./backend
     container_name: monman-api
     ports:
       - "8080:8080"
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASS=postgres
-      - DB_NAME=monman
-      - PORT=8080
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # PostgreSQL database
-  db:
-    image: postgres:16-alpine
-    container_name: monman-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: monman
+      - SQLITE_PATH=/data/monman.db
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - API_PORT=8080
     volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d monman" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - monman_data:/data
     restart: unless-stopped
 
 volumes:
-  db_data:
+  monman_data:
     driver: local

@@ -1,59 +1,60 @@
-import { useState } from 'react';
-
 /**
- * Transaction Filters Component - Transactions Feature
- *
- * Feature Component Pattern:
- * - Manages its own filter state
- * - Communicates with parent via callbacks or shared state
- * - Handles specific domain logic (transaction filtering)
+ * Filters — controlled from parent so they apply to API-loaded rows.
  */
-export function TransactionFilters() {
-  const [dateRange, setDateRange] = useState('30d');
-  const [category, setCategory] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
 
+interface TransactionFiltersProps {
+  searchTerm: string;
+  onSearchTermChange: (v: string) => void;
+  category: string;
+  onCategoryChange: (v: string) => void;
+  dateRange: string;
+  onDateRangeChange: (v: string) => void;
+  categories: { value: string; label: string }[];
+}
+
+export function TransactionFilters({
+  searchTerm,
+  onSearchTermChange,
+  category,
+  onCategoryChange,
+  dateRange,
+  onDateRangeChange,
+  categories,
+}: TransactionFiltersProps) {
   const dateOptions = [
+    { value: 'all', label: 'All time' },
     { value: '7d', label: 'Last 7 days' },
     { value: '30d', label: 'Last 30 days' },
     { value: '90d', label: 'Last 3 months' },
     { value: 'year', label: 'This year' },
   ];
 
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'food', label: 'Food & Dining' },
-    { value: 'transportation', label: 'Transportation' },
-    { value: 'entertainment', label: 'Entertainment' },
-    { value: 'income', label: 'Income' },
-  ];
-
   return (
-    <div className="bg-white rounded-lg border p-4 overflow-hidden">
+    <div className="bg-white rounded-lg border p-4 overflow-hidden dark:bg-neutral-950 dark:border-neutral-700">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="tx-search" className="block text-sm font-medium text-gray-700 mb-1 dark:text-neutral-300">
             Search
           </label>
           <input
+            id="tx-search"
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => onSearchTermChange(e.target.value)}
             placeholder="Search transactions..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-50"
           />
         </div>
 
-        {/* Date Range */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="tx-daterange" className="block text-sm font-medium text-gray-700 mb-1 dark:text-neutral-300">
             Date Range
           </label>
           <select
+            id="tx-daterange"
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => onDateRangeChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-50"
           >
             {dateOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -63,15 +64,15 @@ export function TransactionFilters() {
           </select>
         </div>
 
-        {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="tx-cat" className="block text-sm font-medium text-gray-700 mb-1 dark:text-neutral-300">
             Category
           </label>
           <select
+            id="tx-cat"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => onCategoryChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-50"
           >
             {categories.map((option) => (
               <option key={option.value} value={option.value}>

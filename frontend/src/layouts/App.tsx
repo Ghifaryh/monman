@@ -40,11 +40,18 @@ function App() {
   const navigationItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/transactions', label: 'Transactions', icon: '💳' },
-    { path: '/budget-showcase', label: 'Budget Cards', icon: '💰' },
+    { path: '/budget', label: 'Budget', icon: '💰' },
     // { path: '/ui', label: 'Components', icon: '🎨' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/budget') {
+      return (
+        location.pathname === '/budget' || location.pathname === '/budget-showcase'
+      );
+    }
+    return location.pathname === path;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">

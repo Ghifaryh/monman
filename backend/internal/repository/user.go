@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"monman-backend/internal/models"
 
@@ -19,59 +20,177 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+func parseSQLiteTime(s string) (time.Time, error) {
+	if s == "" {
+		return time.Time{}, fmt.Errorf("empty time")
+	}
+	layouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05-07:00",
+		"2006-01-02",
+	}
+	var last error
+	for _, l := range layouts {
+		t, err := time.Parse(l, s)
+		if err == nil {
+			return t, nil
+		}
+		last = err
+	}
+	return time.Time{}, last
+}
+
 // Create creates a new user
 func (r *UserRepository) Create(user *models.User) error {
+	user.ID = uuid.New()
+	var emailAny any
+	if user.Email != nil {
+		emailAny = *user.Email
+	}
+	var phoneAny any
+	if user.Phone != nil {
+		phoneAny = *user.Phone
+	}
+
 	query := `
-		INSERT INTO users (username, email, password_hash, first_name, last_name, phone, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-		RETURNING id, created_at, updated_at
+		INSERT INTO users (id, username, email, password_hash, first_name, last_name, phone, is_active, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+		RETURNING created_at, updated_at
 	`
 
+	var createdAtStr, updatedAtStr string
 	err := r.db.QueryRow(
 		query,
+		user.ID.String(),
 		user.Username,
-		user.Email,
+		emailAny,
 		user.PasswordHash,
 		user.FirstName,
 		user.LastName,
-		user.Phone,
-		user.IsActive,
-	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+		phoneAny,
+		sqlBool(user.IsActive),
+	).Scan(&createdAtStr, &updatedAtStr)
 
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 
+	user.CreatedAt, err = parseSQLiteTime(createdAtStr)
+	if err != nil {
+		return fmt.Errorf("parse created_at: %w", err)
+	}
+	user.UpdatedAt, err = parseSQLiteTime(updatedAtStr)
+	if err != nil {
+		return fmt.Errorf("parse updated_at: %w", err)
+	}
+
 	return nil
+}
+
+func sqlBool(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func scanUser(row *sql.Row) (*models.User, error) {
+	var (
+		idStr          string
+		username       string
+		emailNS        sql.NullString
+		passwordHash   string
+		firstName      string
+		lastName       string
+		phoneNS        sql.NullString
+		dobNS          sql.NullString
+		picNS          sql.NullString
+		isActive       int
+		emailVerifiedN sql.NullString
+		createdAtStr   string
+		updatedAtStr   string
+	)
+
+	err := row.Scan(
+		&idStr,
+		&username,
+		&emailNS,
+		&passwordHash,
+		&firstName,
+		&lastName,
+		&phoneNS,
+		&dobNS,
+		&picNS,
+		&isActive,
+		&emailVerifiedN,
+		&createdAtStr,
+		&updatedAtStr,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	uid, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse user id: %w", err)
+	}
+	user := &models.User{
+		ID:           uid,
+		Username:     username,
+		PasswordHash: passwordHash,
+		FirstName:    firstName,
+		LastName:     lastName,
+		IsActive:     isActive == 1,
+	}
+	if emailNS.Valid {
+		s := emailNS.String
+		user.Email = &s
+	}
+	if phoneNS.Valid {
+		s := phoneNS.String
+		user.Phone = &s
+	}
+	if dobNS.Valid && dobNS.String != "" {
+		t, err := parseSQLiteTime(dobNS.String)
+		if err == nil {
+			user.DateOfBirth = &t
+		}
+	}
+	if picNS.Valid {
+		s := picNS.String
+		user.ProfilePictureURL = &s
+	}
+	if emailVerifiedN.Valid && emailVerifiedN.String != "" {
+		t, err := parseSQLiteTime(emailVerifiedN.String)
+		if err == nil {
+			user.EmailVerifiedAt = &t
+		}
+	}
+	user.CreatedAt, err = parseSQLiteTime(createdAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("created_at: %w", err)
+	}
+	user.UpdatedAt, err = parseSQLiteTime(updatedAtStr)
+	if err != nil {
+		return nil, fmt.Errorf("updated_at: %w", err)
+	}
+	return user, nil
 }
 
 // GetByUsername retrieves a user by username
 func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
-	user := &models.User{}
 	query := `
 		SELECT id, username, email, password_hash, first_name, last_name, phone,
 		       date_of_birth, profile_picture_url, is_active, email_verified_at,
 		       created_at, updated_at
 		FROM users
-		WHERE username = $1 AND is_active = true
+		WHERE username = ? AND is_active = 1
 	`
 
-	err := r.db.QueryRow(query, username).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.FirstName,
-		&user.LastName,
-		&user.Phone,
-		&user.DateOfBirth,
-		&user.ProfilePictureURL,
-		&user.IsActive,
-		&user.EmailVerifiedAt,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
+	row := r.db.QueryRow(query, username)
+	user, err := scanUser(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
@@ -84,31 +203,16 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 
 // GetByEmail retrieves a user by email (for validation purposes)
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
-	user := &models.User{}
 	query := `
 		SELECT id, username, email, password_hash, first_name, last_name, phone,
 		       date_of_birth, profile_picture_url, is_active, email_verified_at,
 		       created_at, updated_at
 		FROM users
-		WHERE email = $1 AND is_active = true
+		WHERE email = ? AND is_active = 1
 	`
 
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.FirstName,
-		&user.LastName,
-		&user.Phone,
-		&user.DateOfBirth,
-		&user.ProfilePictureURL,
-		&user.IsActive,
-		&user.EmailVerifiedAt,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
+	row := r.db.QueryRow(query, email)
+	user, err := scanUser(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
@@ -121,31 +225,16 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
-	user := &models.User{}
 	query := `
 		SELECT id, username, email, password_hash, first_name, last_name, phone,
 		       date_of_birth, profile_picture_url, is_active, email_verified_at,
 		       created_at, updated_at
 		FROM users
-		WHERE id = $1 AND is_active = true
+		WHERE id = ? AND is_active = 1
 	`
 
-	err := r.db.QueryRow(query, id).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.FirstName,
-		&user.LastName,
-		&user.Phone,
-		&user.DateOfBirth,
-		&user.ProfilePictureURL,
-		&user.IsActive,
-		&user.EmailVerifiedAt,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
+	row := r.db.QueryRow(query, id.String())
+	user, err := scanUser(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
@@ -154,41 +243,63 @@ func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
 	}
 
 	return user, nil
-} // Update updates user information
+}
+
+// Update updates user information
 func (r *UserRepository) Update(user *models.User) error {
+	var dobAny any
+	if user.DateOfBirth != nil {
+		dobAny = user.DateOfBirth.Format("2006-01-02")
+	}
+	var emailAny any
+	if user.Email != nil {
+		emailAny = *user.Email
+	}
+	var phoneAny any
+	if user.Phone != nil {
+		phoneAny = *user.Phone
+	}
+	var picAny any
+	if user.ProfilePictureURL != nil {
+		picAny = *user.ProfilePictureURL
+	}
+
 	query := `
 		UPDATE users
-		SET username = $2, email = $3, first_name = $4, last_name = $5, phone = $6,
-		    date_of_birth = $7, profile_picture_url = $8, updated_at = NOW()
-		WHERE id = $1 AND is_active = true
+		SET email = ?, first_name = ?, last_name = ?, phone = ?,
+		    date_of_birth = ?, profile_picture_url = ?, updated_at = datetime('now')
+		WHERE id = ? AND is_active = 1
 		RETURNING updated_at
 	`
 
+	var updatedAtStr string
 	err := r.db.QueryRow(
 		query,
-		user.ID,
-		user.Email,
+		emailAny,
 		user.FirstName,
 		user.LastName,
-		user.Phone,
-		user.DateOfBirth,
-		user.ProfilePictureURL,
-	).Scan(&user.UpdatedAt)
-
+		phoneAny,
+		dobAny,
+		picAny,
+		user.ID.String(),
+	).Scan(&updatedAtStr)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	return nil
-} // UpdatePassword updates user password
+	user.UpdatedAt, err = parseSQLiteTime(updatedAtStr)
+	return err
+}
+
+// UpdatePassword updates user password
 func (r *UserRepository) UpdatePassword(userID uuid.UUID, passwordHash string) error {
 	query := `
 		UPDATE users
-		SET password_hash = $2, updated_at = NOW()
-		WHERE id = $1 AND is_active = true
+		SET password_hash = ?, updated_at = datetime('now')
+		WHERE id = ? AND is_active = 1
 	`
 
-	_, err := r.db.Exec(query, userID, passwordHash)
+	_, err := r.db.Exec(query, passwordHash, userID.String())
 	if err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
 	}
@@ -200,11 +311,11 @@ func (r *UserRepository) UpdatePassword(userID uuid.UUID, passwordHash string) e
 func (r *UserRepository) VerifyEmail(userID uuid.UUID) error {
 	query := `
 		UPDATE users
-		SET email_verified_at = NOW(), updated_at = NOW()
-		WHERE id = $1 AND is_active = true
+		SET email_verified_at = datetime('now'), updated_at = datetime('now')
+		WHERE id = ? AND is_active = 1
 	`
 
-	_, err := r.db.Exec(query, userID)
+	_, err := r.db.Exec(query, userID.String())
 	if err != nil {
 		return fmt.Errorf("failed to verify email: %w", err)
 	}
@@ -216,11 +327,11 @@ func (r *UserRepository) VerifyEmail(userID uuid.UUID) error {
 func (r *UserRepository) Deactivate(userID uuid.UUID) error {
 	query := `
 		UPDATE users
-		SET is_active = false, updated_at = NOW()
-		WHERE id = $1
+		SET is_active = 0, updated_at = datetime('now')
+		WHERE id = ?
 	`
 
-	_, err := r.db.Exec(query, userID)
+	_, err := r.db.Exec(query, userID.String())
 	if err != nil {
 		return fmt.Errorf("failed to deactivate user: %w", err)
 	}

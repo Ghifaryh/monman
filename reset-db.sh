@@ -1,24 +1,20 @@
 #!/bin/bash
-# Database Reset Script for MonMan
-# Completely resets database and re-runs all migrations
+# Reset SQLite database and re-apply migrations
 
-echo "🔄 Resetting MonMan Database"
-echo "============================"
+echo "🔄 Resetting MonMan SQLite database"
+echo "===================================="
 
-echo "⚠️  This will completely destroy all data!"
-read -p "Are you sure? (y/N): " -n 1 -r
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DB="${ROOT}/backend/data/monman.db"
+
+echo "⚠️  This deletes $DB (and WAL files)"
+read -p "Continue? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ Reset cancelled"
-    exit 1
+  echo "Cancelled"
+  exit 1
 fi
 
-echo "🛑 Stopping database container and removing volume..."
-docker-compose -f docker-compose.dev.yml down -v
-
-echo "🚀 Starting fresh database with migrations..."
-./dev-setup.sh
-
-echo ""
-echo "✅ Database reset complete!"
-echo "🎯 Ready to start development with fresh data"
+rm -f "$DB" "${DB}-wal" "${DB}-shm" "${DB}-journal" 2>/dev/null
+echo "📄 Running dev-setup..."
+exec "$ROOT/dev-setup.sh"

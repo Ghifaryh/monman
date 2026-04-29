@@ -1,114 +1,113 @@
 import { formatRupiah, getAmountColorClass } from '../../../lib/currency';
+import type { TransactionApiRow } from '../../../api/finance';
 
-/**
- * Transaction List Component - Transactions Feature
- *
- * Demonstrates:
- * - Feature component with mock data
- * - List rendering patterns
- * - Interaction handlers ready for real functionality
- */
-export function TransactionList() {
-  // TODO: Replace with actual API data and filtering logic
-  // All amounts in cents for precise calculations
-  const transactions = [
-    {
-      id: 1,
-      date: '2024-11-24',
-      description: 'Belanja di Supermarket',
-      category: 'Makanan & Minuman',
-      amount: -12785000, // -Rp 127.850
-      account: 'Rekening Utama'
-    },
-    {
-      id: 2,
-      date: '2024-11-24',
-      description: 'Gaji Bulanan - Transfer',
-      category: 'Pendapatan',
-      amount: 320000000, // +Rp 3.200.000
-      account: 'Rekening Utama'
-    },
-    {
-      id: 3,
-      date: '2024-11-23',
-      description: 'Shell - Isi Bensin',
-      category: 'Transportasi',
-      amount: -5230000, // -Rp 52.300
-      account: 'Kartu Kredit'
-    },
-    {
-      id: 4,
-      date: '2024-11-23',
-      description: 'Netflix Bulanan',
-      category: 'Hiburan',
-      amount: -15990000, // -Rp 159.900
-      account: 'Kartu Kredit'
-    },
-    {
-      id: 5,
-      date: '2024-11-22',
-      description: 'Belanja di Mall',
-      category: 'Belanja',
-      amount: -8947000, // -Rp 89.470
-      account: 'Rekening Utama'
-    },
-  ];
+interface TransactionListProps {
+  transactions: TransactionApiRow[];
+  isLoading?: boolean;
+  error?: Error | null;
+}
 
-  const handleTransactionClick = (transactionId: number) => {
-    console.log('View transaction details:', transactionId);
-    // TODO: Navigate to transaction detail page or open modal
-  };
+export function TransactionList({ transactions, isLoading, error }: TransactionListProps) {
+  const handleTransactionClick = (id: string) => {
+    // Future: detail modal / /transactions/$id
+    console.debug('transaction', id)
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-lg p-6 text-sm text-red-800 dark:text-red-300">
+        {error.message}
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border overflow-hidden dark:bg-neutral-950 dark:border-neutral-700 animate-pulse">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-neutral-700 h-14" />
+        {[1, 2, 3, 4].map((k) => (
+          <div key={k} className="px-6 py-4 border-b border-gray-50 dark:border-neutral-800 flex justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="h-5 w-48 rounded bg-gray-200 dark:bg-neutral-700" />
+              <div className="h-3 w-64 rounded bg-gray-100 dark:bg-neutral-800" />
+            </div>
+            <div className="h-6 w-24 rounded bg-gray-100 dark:bg-neutral-800" />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden">
-      <div className="px-4 sm:px-6 py-4 border-b">
-        <h3 className="text-lg font-medium text-gray-900">
+    <div className="bg-white rounded-lg border overflow-hidden dark:bg-neutral-950 dark:border-neutral-700">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-neutral-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-50">
           All Transactions ({transactions.length})
         </h3>
       </div>
 
-      <div className="divide-y">
-        {transactions.map((transaction) => (
-          <div
-            key={transaction.id}
-            className="px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-            onClick={() => handleTransactionClick(transaction.id)}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">
-                      {transaction.description}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {/* Mobile: Stack vertically, Desktop: Inline with dots */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
-                        <span className="px-2 py-0.5 bg-gray-100 text-xs rounded-full w-fit">{transaction.category}</span>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="text-xs">{transaction.account}</span>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="text-xs">{new Date(transaction.date).toLocaleDateString('id-ID')}</span>
+      {transactions.length === 0 ? (
+        <div className="px-6 py-12 text-center text-sm text-gray-500 dark:text-neutral-400">
+          Belum ada transaksi. Tambah dari dashboard atau (nanti) form di sini.
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+          {transactions.map((transaction) => (
+            <div
+              key={transaction.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleTransactionClick(transaction.id)}
+              onKeyDown={(e) => e.key === 'Enter' && handleTransactionClick(transaction.id)}
+              className="px-4 sm:px-6 py-4 hover:bg-gray-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-neutral-100 truncate">
+                        {transaction.description}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1 dark:text-neutral-400">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-neutral-800 text-xs rounded-full w-fit">
+                            {transaction.category}
+                          </span>
+                          <span className="hidden sm:inline dark:text-neutral-600">•</span>
+                          <span className="text-xs">{transaction.account}</span>
+                          <span className="hidden sm:inline dark:text-neutral-600">•</span>
+                          <span className="text-xs">
+                            {new Date(transaction.date).toLocaleDateString('id-ID')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <div className="text-right">
-                  <div className={`text-sm sm:text-lg font-semibold ${getAmountColorClass(transaction.amount)}`}>
-                    {transaction.amount > 0 ? '+' : ''}{formatRupiah(Math.abs(transaction.amount))}
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <div className="text-right">
+                    <div
+                      className={`text-sm sm:text-lg font-semibold ${getAmountColorClass(transaction.amount)}`}
+                    >
+                      {transaction.amount > 0 ? '+' : ''}
+                      {formatRupiah(Math.abs(transaction.amount))}
+                    </div>
                   </div>
+                  <svg
+                    className="w-5 h-5 text-gray-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
-  );
+  )
 }

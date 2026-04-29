@@ -18,14 +18,9 @@ type ServerConfig struct {
 	Env  string
 }
 
-// DatabaseConfig holds database configuration
+// DatabaseConfig holds SQLite configuration
 type DatabaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
+	Path string // path to sqlite file, e.g. ./data/monman.db
 }
 
 // JWTConfig holds JWT configuration
@@ -42,12 +37,7 @@ func Load() *Config {
 			Env:  getEnv("APP_ENV", "development"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvAsInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "monman_user"),
-			Password: getEnv("DB_PASSWORD", "monman_pass"),
-			DBName:   getEnv("DB_NAME", "monman_db"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Path: getEnv("SQLITE_PATH", "./data/monman.db"),
 		},
 		JWT: JWTConfig{
 			Secret: getEnv("JWT_SECRET", "your-secret-key-change-this"),

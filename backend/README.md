@@ -1,13 +1,21 @@
 # MonMan Backend - Indonesian Personal Finance Management API
 
+**Default database: SQLite** (`SQLITE_PATH`, default `./data/monman.db`). Apply migrations with `go run ./cmd/migrate` (add `-sample` for demo rows). Deprecated PostgreSQL SQL lives in `migrations/postgres/`.
+
+```bash
+mkdir -p data && go run ./cmd/migrate -sample
+SQLITE_PATH=./data/monman.db JWT_SECRET=dev go run ./cmd/server
+```
+
+---
+
 A comprehensive Go backend API for MonMan, designed specifically for Indonesian personal finance management with support for Rupiah currency, Indonesian banking systems, and cultural financial patterns.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Go 1.21+
-- Docker & Docker Compose (recommended)
-- PostgreSQL client (`psql`) for direct database access
+- Docker optional (Compose uses SQLite volume; legacy Postgres under `docker compose --profile postgres`)
 
 ### 1. Database Setup (Docker - Recommended)
 ```bash

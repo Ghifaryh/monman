@@ -16,7 +16,7 @@ This project serves as a practical learning experience for:
 ### Backend
 - **Language:** Go 1.21+ with Chi router
 - **Architecture:** Clean architecture with internal packages
-- **Database:** PostgreSQL 16 with UUID-based schema
+- **Database:** SQLite (`backend/data/monman.db`; legacy Postgres SQL in `backend/migrations/postgres/`)
 - **API:** RESTful JSON API with CORS support
 
 ### Frontend
@@ -28,7 +28,7 @@ This project serves as a practical learning experience for:
 
 ### Infrastructure
 - **Containerization:** Docker with multi-stage builds
-- **Database:** PostgreSQL with persistent volumes
+- **Database:** SQLite file in a Docker volume (or local `data/` folder)
 - **Development:** Hot reload for both frontend and backend
 
 ## 🏗 Current Features
@@ -59,45 +59,33 @@ This project serves as a practical learning experience for:
 
 ### Prerequisites
 
-- **Docker & Docker Compose** (recommended)
-- **Go 1.21+** (for backend development)
-- **Bun** (for frontend development)
-- **PostgreSQL client** (`psql`) for database operations
+- **Go 1.21+** (backend), **Bun** (frontend)
+- **Docker** optional (`docker compose` for containerized frontend+API)
 
 ### Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/Ghifaryh/monman.git
 cd monman
 
-# Option 1: Full stack with Docker (recommended)
-docker-compose up
+# Creates backend/data/monman.db and applies SQLite migrations (with sample demo data).
+./dev-setup.sh
 
-# Option 2: Development mode with database in Docker (hybrid approach)
-# Terminal 1 - Start PostgreSQL database
-docker-compose -f docker-compose.dev.yml up -d
-
-# Terminal 2 - Run database migrations
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0002_seed_data.sql
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0003_sample_data.sql
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0004_seed_users.sql
-
-# Terminal 3 - Backend
-cd backend && go run cmd/server/main.go
-
-# Terminal 4 - Frontend
+cd backend && SQLITE_PATH=./data/monman.db JWT_SECRET=change-me go run ./cmd/server
+# Second terminal — frontend:
 cd frontend && bun dev
 
-# Option 3: Automated setup (recommended for new environments)
-./dev-setup.sh
+# Alternative: SQLite only (migration CLI)
+# cd backend && go run ./cmd/migrate -sample && go run ./cmd/server
+
+# Containers (API migrates SQLite in /data on startup)
+docker compose up --build
 ```
 
 ### Access Points
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
-- **Database**: localhost:5432 (monman_user/monman_pass/monman_db)
+- **Database file**: `backend/data/monman.db`
 
 ### Test Users (after running migrations)
 - **testuser** / test@example.com (password: `password123`)
@@ -182,46 +170,20 @@ bun run type-check
 bun run lint
 ```
 
-### Database Management
+### Database Management (SQLite)
 
-#### Daily Development Workflow
+The app uses a single SQLite file (default `backend/data/monman.db`; override with `SQLITE_PATH`).
+
 ```bash
-# Start database (first time or after computer restart)
-docker-compose -f docker-compose.dev.yml up -d
+# Re-apply migrations idempotently (optional)
+cd backend && go run ./cmd/migrate -sample
 
-# Stop database at end of day (data preserved)
-docker-compose -f docker-compose.dev.yml down
+# Inspect (if sqlite3 CLI is installed)
+sqlite3 backend/data/monman.db '.tables'
+sqlite3 backend/data/monman.db "SELECT username, email FROM users;"
 
-# Next day - start again (all data still there)
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-#### Database Operations
-```bash
-# Connect to PostgreSQL (Docker container)
-docker exec -it monman-db-dev psql -U monman_user -d monman_db
-
-# Connect via native psql client (if installed)
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db
-
-# Check database tables
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c "\dt"
-
-# View sample data
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -c "SELECT username, email FROM users;"
-
-# Run specific migration
-PGPASSWORD=monman_pass psql -h localhost -p 5432 -U monman_user -d monman_db -f backend/migrations/0001_init.sql
-
-# Stop database (keeps all data for next restart)
-docker-compose -f docker-compose.dev.yml down     # Safe shutdown - data persists
-
-# Reset database completely (for schema changes during development)
-docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume (deletes all data)
-./dev-setup.sh                                    # Required: Start fresh with migrations
-
-# Convenient reset script
-./reset-db.sh                                     # Automated down -v + setup
+# Nuclear reset
+./reset-db.sh
 ```
 
 ## 🎯 Learning Objectives
@@ -229,7 +191,7 @@ docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume (d
 ### Go Backend Concepts
 - **Clean Architecture**: Separation of concerns with internal packages
 - **HTTP Routing**: Chi router with middleware patterns
-- **Database Integration**: PostgreSQL with proper connection handling
+- **Database Integration**: SQLite with `database/sql` and WAL mode
 - **JSON APIs**: RESTful endpoint design and error handling
 - **Environment Configuration**: 12-factor app principles
 
@@ -243,11 +205,11 @@ docker-compose -f docker-compose.dev.yml down -v  # Remove container + volume (d
 ## 🚧 Roadmap
 
 ### ✅ Completed
-- [x] **Project Structure & Docker**: Complete containerization with PostgreSQL 16
+- [x] **Project Structure & Docker**: API + SQLite volume; optional legacy Postgres SQL under `migrations/postgres/`
 - [x] **Database Schema**: 9 tables with UUID keys, Indonesian categories, sample data
 - [x] **Authentication System**: JWT + bcrypt with user registration/login APIs
 - [x] **Database Migrations**: Complete schema with seed data and test users
-- [x] **Development Workflow**: Hybrid Docker database + native development setup
+- [x] **Development Workflow**: SQLite file + native Go/Bun; `./dev-setup.sh` for migrations
 - [x] **Frontend Architecture**: TanStack Router with protected routes and auth flow
 - [x] **Mobile-First UI**: Professional login, responsive navigation, theme system
 - [x] **Indonesian Support**: Rupiah formatting, local categories, cultural patterns

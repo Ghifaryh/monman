@@ -1,400 +1,536 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatRupiah } from '../lib/currency';
+import {
+  useAppendBudgetCommonPurchasesMutation,
+  useBudgetsQuery,
+  useCategoriesQuery,
+  useCreateBudgetMutation,
+} from '../hooks/useFinanceQueries';
+import type { BudgetCardRow, CreateCommonPurchasePayload } from '../api/finance';
 
-interface BudgetCategory {
-  id: string;
-  name: string;
-  allocated: number; // in cents
-  period: 'weekly' | 'monthly' | 'yearly';
-  color: string;
-  icon: string;
-  isActive: boolean;
-  commonPurchases: Array<{
-    item: string;
-    quantity?: string;
-    estimatedAmount: number;
-    store?: string;
-  }>;
+function isoFromDate(d: Date): string {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${day}`;
 }
 
-/**
- * Option 2: Dedicated Budget Settings Page
- *
- * This shows a comprehensive budget management interface where users can:
- * - Create new budget categories
- * - Set allocation amounts and periods
- * - Configure common purchases for each category
- * - Enable/disable categories
- * - Use Indonesian shopping presets
- */
-export function BudgetSettingsPage() {
-  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([
-    {
-      id: '1',
-      name: 'Belanja Bulanan',
-      allocated: 150000000, // 1.5M in cents
-      period: 'monthly',
-      color: 'blue',
-      icon: '🛒',
-      isActive: true,
-      commonPurchases: [
-        { item: 'Beras 5kg', estimatedAmount: 7500000, store: 'Pasar Minggu' },
-        { item: 'Minyak Goreng', estimatedAmount: 2500000, store: 'Indomaret' },
-        { item: 'Gula Pasir', estimatedAmount: 1500000 },
-        { item: 'Daging Ayam', quantity: '1kg', estimatedAmount: 3500000 },
-      ]
-    },
-    {
-      id: '2',
-      name: 'Bensin Motor',
-      allocated: 20000000, // 200k in cents
-      period: 'weekly',
-      color: 'yellow',
-      icon: '⛽',
-      isActive: true,
-      commonPurchases: [
-        { item: 'Premium', quantity: 'Rp 20.000', estimatedAmount: 2000000, store: 'SPBU Shell' },
-        { item: 'Pertalite', quantity: 'Rp 15.000', estimatedAmount: 1500000, store: 'SPBU Pertamina' },
-      ]
-    },
-    {
-      id: '3',
-      name: 'Listrik & Air',
-      allocated: 50000000, // 500k in cents
-      period: 'monthly',
-      color: 'green',
-      icon: '💡',
-      isActive: true,
-      commonPurchases: [
-        { item: 'Token Listrik', quantity: 'Rp 100.000', estimatedAmount: 10000000 },
-        { item: 'Tagihan Air', estimatedAmount: 15000000 },
-      ]
-    }
-  ]);
+function suggestedPeriodDates(period: 'weekly' | 'monthly' | 'yearly'): { start: string; end: string } {
+  const now = new Date();
+  if (period === 'weekly') {
+    const end = new Date(now);
+    end.setDate(end.getDate() + 6);
+    return { start: isoFromDate(now), end: isoFromDate(end) };
+  }
+  if (period === 'monthly') {
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const start = new Date(y, m, 1);
+    const end = new Date(y, m + 1, 0);
+    return { start: isoFromDate(start), end: isoFromDate(end) };
+  }
+  const y = now.getFullYear();
+  return { start: `${y}-01-01`, end: `${y}-12-31` };
+}
 
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [newCategory, setNewCategory] = useState({
-    name: '',
-    allocated: 0,
-    period: 'monthly' as 'weekly' | 'monthly' | 'yearly',
-    color: 'blue',
-    icon: '📱'
-  });
+interface DraftPreset {
+  item: string;
+  quantity: string;
+  estimatedRupiah: string;
+  store: string;
+}
 
-  // Indonesian category presets
-  const categoryPresets = [
-    { name: 'Belanja Bulanan', icon: '🛒', color: 'blue', suggestedAmount: 150000000, period: 'monthly' as const },
-    { name: 'Bensin Motor', icon: '⛽', color: 'yellow', suggestedAmount: 20000000, period: 'weekly' as const },
-    { name: 'Listrik & Air', icon: '💡', color: 'green', suggestedAmount: 50000000, period: 'monthly' as const },
-    { name: 'Internet & Pulsa', icon: '📱', color: 'purple', suggestedAmount: 15000000, period: 'monthly' as const },
-    { name: 'Transportasi', icon: '🚗', color: 'orange', suggestedAmount: 30000000, period: 'monthly' as const },
-    { name: 'Makan di Luar', icon: '🍽️', color: 'red', suggestedAmount: 40000000, period: 'monthly' as const },
-    { name: 'Kesehatan', icon: '💊', color: 'teal', suggestedAmount: 25000000, period: 'monthly' as const },
-    { name: 'Pendidikan', icon: '📚', color: 'indigo', suggestedAmount: 20000000, period: 'monthly' as const },
-  ];
+interface CategoryPreset {
+  name: string;
+  icon: string;
+  color: string;
+  /** cents — same convention as API */
+  suggestedAmount: number;
+  period: 'weekly' | 'monthly' | 'yearly';
+}
 
-  const handleAddCategory = () => {
-    if (newCategory.name && newCategory.allocated > 0) {
-      const category: BudgetCategory = {
-        id: Date.now().toString(),
-        name: newCategory.name,
-        allocated: newCategory.allocated * 100, // Convert to cents
-        period: newCategory.period,
-        color: newCategory.color,
-        icon: newCategory.icon,
-        isActive: true,
-        commonPurchases: []
-      };
+const categoryPresets: CategoryPreset[] = [
+  { name: 'Belanja Bulanan', icon: '🛒', color: 'blue', suggestedAmount: 150000000, period: 'monthly' },
+  { name: 'Bensin Motor', icon: '⛽', color: 'yellow', suggestedAmount: 20000000, period: 'weekly' },
+  { name: 'Listrik & Air', icon: '💡', color: 'green', suggestedAmount: 50000000, period: 'monthly' },
+  { name: 'Internet & Pulsa', icon: '📱', color: 'purple', suggestedAmount: 15000000, period: 'monthly' },
+  { name: 'Transportasi', icon: '🚗', color: 'orange', suggestedAmount: 30000000, period: 'monthly' },
+  { name: 'Makan di Luar', icon: '🍽️', color: 'red', suggestedAmount: 40000000, period: 'monthly' },
+  { name: 'Kesehatan', icon: '💊', color: 'teal', suggestedAmount: 25000000, period: 'monthly' },
+  { name: 'Pendidikan', icon: '📚', color: 'indigo', suggestedAmount: 20000000, period: 'monthly' },
+];
 
-      setBudgetCategories(prev => [...prev, category]);
-      setNewCategory({ name: '', allocated: 0, period: 'monthly', color: 'blue', icon: '📱' });
-      setIsAddingCategory(false);
-    }
-  };
+function parseRupiahInput(raw: string): number {
+  const n = Number(String(raw).replace(/\./g, '').replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : NaN;
+}
 
-  const handleUpdateCategory = (id: string, updates: Partial<BudgetCategory>) => {
-    setBudgetCategories(prev =>
-      prev.map(cat => cat.id === id ? { ...cat, ...updates } : cat)
+function PresetRowAppend({ budget }: { budget: BudgetCardRow }) {
+  const [item, setItem] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [rupiah, setRupiah] = useState('');
+  const [store, setStore] = useState('');
+  const append = useAppendBudgetCommonPurchasesMutation();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const est = parseRupiahInput(rupiah);
+    const trimmed = item.trim();
+    if (!trimmed || !Number.isFinite(est) || est <= 0) return;
+    const payload: CreateCommonPurchasePayload = {
+      item: trimmed,
+      estimated_amount: Math.round(est * 100),
+      ...(quantity.trim() ? { quantity: quantity.trim() } : {}),
+      ...(store.trim() ? { store: store.trim() } : {}),
+    };
+    append.mutate(
+      { budgetId: budget.id, purchases: [payload] },
+      {
+        onSuccess: () => {
+          setItem('');
+          setQuantity('');
+          setRupiah('');
+          setStore('');
+        },
+      },
     );
   };
 
-  const handleDeleteCategory = (id: string) => {
-    if (confirm('Yakin ingin menghapus kategori budget ini?')) {
-      setBudgetCategories(prev => prev.filter(cat => cat.id !== id));
+  return (
+    <form onSubmit={submit} className="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+      <div className="text-sm font-medium text-gray-800 mb-2">Tambah pembelian umum</div>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <input
+          placeholder="Barang"
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+          className="text-sm px-2 py-1.5 border rounded"
+        />
+        <input
+          placeholder="Qty (ops.)"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          className="text-sm px-2 py-1.5 border rounded"
+        />
+        <input
+          placeholder="Perkiraan (Rp)"
+          value={rupiah}
+          onChange={(e) => setRupiah(e.target.value)}
+          className="text-sm px-2 py-1.5 border rounded"
+        />
+        <input
+          placeholder="Toko (ops.)"
+          value={store}
+          onChange={(e) => setStore(e.target.value)}
+          className="text-sm px-2 py-1.5 border rounded"
+        />
+      </div>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="submit"
+          disabled={append.isPending || !item.trim()}
+          className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-40"
+        >
+          {append.isPending ? 'Menyimpan…' : '+ Simpan preset'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Dedicated budget settings: lists real budgets from the API and supports creating budgets (with presets) and appending presets.
+ */
+export function BudgetSettingsPage() {
+  const { data: budgetsPayload, isPending, error, isError, refetch } = useBudgetsQuery();
+  const { data: expenseCategories, isPending: catsLoading } = useCategoriesQuery('expense');
+  const createBudget = useCreateBudgetMutation();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formCategoryId, setFormCategoryId] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formAllocatedRp, setFormAllocatedRp] = useState('');
+  const [formPeriod, setFormPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [formStart, setFormStart] = useState('');
+  const [formEnd, setFormEnd] = useState('');
+  const [formIcon, setFormIcon] = useState('📱');
+  const [formColor, setFormColor] = useState('blue');
+  const [presetsDraft, setPresetsDraft] = useState<DraftPreset[]>([]);
+  const [formErr, setFormErr] = useState<string | null>(null);
+
+  const openModal = () => {
+    const p = suggestedPeriodDates('monthly');
+    setFormCategoryId('');
+    setFormName('');
+    setFormAllocatedRp('');
+    setFormPeriod('monthly');
+    setFormStart(p.start);
+    setFormEnd(p.end);
+    setFormIcon('📱');
+    setFormColor('blue');
+    setPresetsDraft([]);
+    setFormErr(null);
+    setModalOpen(true);
+  };
+
+  const applyDatesForPeriod = (period: 'weekly' | 'monthly' | 'yearly') => {
+    const p = suggestedPeriodDates(period);
+    setFormStart(p.start);
+    setFormEnd(p.end);
+  };
+
+  const totalAllocated = useMemo(() => {
+    return (budgetsPayload?.budgets ?? []).reduce((s, b) => s + b.allocated_amount, 0);
+  }, [budgetsPayload?.budgets]);
+
+  const handleCreateBudget = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErr(null);
+    const rp = parseRupiahInput(formAllocatedRp);
+    if (!formCategoryId.trim() || !formName.trim() || !Number.isFinite(rp) || rp <= 0) {
+      setFormErr('Lengkapi kategori, nama, dan alokasi (Rp).');
+      return;
     }
+    const common: CreateCommonPurchasePayload[] = presetsDraft
+      .map((row) => {
+        const est = parseRupiahInput(row.estimatedRupiah);
+        const it = row.item.trim();
+        if (!it || !Number.isFinite(est) || est <= 0) return null;
+        const cp: CreateCommonPurchasePayload = {
+          item: it,
+          estimated_amount: Math.round(est * 100),
+          ...(row.quantity.trim() ? { quantity: row.quantity.trim() } : {}),
+          ...(row.store.trim() ? { store: row.store.trim() } : {}),
+        };
+        return cp;
+      })
+      .filter((x): x is CreateCommonPurchasePayload => x != null);
+
+    createBudget.mutate(
+      {
+        category_id: formCategoryId,
+        name: formName.trim(),
+        allocated_amount: Math.round(rp * 100),
+        budget_period: formPeriod,
+        period_start_date: formStart,
+        period_end_date: formEnd,
+        icon: formIcon,
+        color: formColor,
+        ...(common.length > 0 ? { common_purchases: common } : {}),
+      },
+      {
+        onSuccess: () => {
+          setModalOpen(false);
+          void refetch();
+        },
+        onError: (ex) =>
+          setFormErr(ex instanceof Error ? ex.message : 'Gagal membuat budget'),
+      },
+    );
   };
 
-  const handlePresetSelect = (preset: typeof categoryPresets[0]) => {
-    setNewCategory({
-      name: preset.name,
-      allocated: preset.suggestedAmount / 100, // Convert to rupiah for display
-      period: preset.period as 'weekly' | 'monthly',
-      color: preset.color,
-      icon: preset.icon
-    });
-    setIsAddingCategory(true);
+  const addPresetDraftRow = () => {
+    setPresetsDraft((rows) => [...rows, { item: '', quantity: '', estimatedRupiah: '', store: '' }]);
   };
 
-  const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.allocated, 0);
+  const updatePresetDraft = (i: number, patch: Partial<DraftPreset>) => {
+    setPresetsDraft((rows) =>
+      rows.map((r, j) => (j === i ? { ...r, ...patch } : r)),
+    );
+  };
+  const removePresetDraft = (i: number) =>
+    setPresetsDraft((rows) => rows.filter((_, j) => j !== i));
+
+  const applyPreset = (preset: CategoryPreset) => {
+    const p = suggestedPeriodDates(preset.period);
+    setModalOpen(true);
+    setFormName(preset.name);
+    setFormIcon(preset.icon);
+    setFormColor(preset.color);
+    setFormPeriod(preset.period);
+    setFormStart(p.start);
+    setFormEnd(p.end);
+    setFormAllocatedRp(String(preset.suggestedAmount / 100));
+    setPresetsDraft([]);
+    setFormErr(null);
+  };
+
+  const budgets = budgetsPayload?.budgets ?? [];
+
+  if (isPending || catsLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-gray-600">Memuat pengaturan budget…</div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-red-600">
+        Gagal memuat budget: {error instanceof Error ? error.message : 'Error'}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
-      {/* Page Header */}
       <div className="bg-white rounded-lg border p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Pengaturan Budget</h1>
         <p className="text-gray-600 mb-4">
-          Kelola kategori budget dan alokasi pengeluaran bulanan Anda
+          Data dari server: buat budget baru atau tambah pembelian umum ke budget yang ada.
         </p>
 
-        <div className="bg-blue-50 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-blue-900">Total Budget Aktif</h3>
-              <p className="text-2xl font-bold text-blue-600">{formatRupiah(totalBudget)}</p>
-            </div>
-            <div className="text-blue-600">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-            </div>
+        <div className="bg-blue-50 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-medium text-blue-900">Total alokasi (aktif)</h3>
+            <p className="text-2xl font-bold text-blue-600">{formatRupiah(totalAllocated)}</p>
           </div>
+          <button
+            type="button"
+            onClick={openModal}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            + Budget baru
+          </button>
         </div>
       </div>
 
-      {/* Quick Presets */}
       <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Template Kategori Indonesia</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Template kategori Indonesia</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {categoryPresets.map((preset, index) => (
+          {categoryPresets.map((preset) => (
             <button
-              key={index}
-              onClick={() => handlePresetSelect(preset)}
+              key={preset.name}
+              type="button"
+              onClick={() => applyPreset(preset)}
               className="p-3 text-left bg-gray-50 hover:bg-blue-50 rounded-lg border hover:border-blue-300 transition-colors"
             >
               <div className="text-lg mb-1">{preset.icon}</div>
               <div className="text-sm font-medium text-gray-900">{preset.name}</div>
               <div className="text-xs text-gray-500">
-                ~{formatRupiah(preset.suggestedAmount)}/{preset.period === 'monthly' ? 'bulan' : 'minggu'}
+                ~{formatRupiah(preset.suggestedAmount)}/
+                {preset.period === 'monthly' ? 'bulan' : preset.period === 'weekly' ? 'minggu' : 'tahun'}
               </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Budget Categories List */}
       <div className="bg-white rounded-lg border">
-        <div className="p-6 border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Kategori Budget</h2>
-            <button
-              onClick={() => setIsAddingCategory(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + Tambah Kategori
-            </button>
-          </div>
+        <div className="p-6 border-b flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Budget Anda</h2>
         </div>
 
         <div className="divide-y">
-          {budgetCategories.map((category) => (
-            <div key={category.id} className="p-6">
-              {editingCategory === category.id ? (
-                /* Edit Mode */
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {budgets.length === 0 ? (
+            <div className="p-8 text-center text-gray-600">
+              Belum ada budget. Gunakan &quot;Budget baru&quot; atau POST{' '}
+              <code className="text-xs bg-gray-100 px-1 rounded">/api/budgets</code>.
+            </div>
+          ) : (
+            budgets.map((b) => (
+              <div key={b.id} className="p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">{b.icon}</div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nama Kategori
-                      </label>
-                      <input
-                        type="text"
-                        value={category.name}
-                        onChange={(e) => handleUpdateCategory(category.id, { name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Budget (Rp)
-                      </label>
-                      <input
-                        type="number"
-                        value={category.allocated / 100}
-                        onChange={(e) => handleUpdateCategory(category.id, { allocated: Number(e.target.value) * 100 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Periode
-                      </label>
-                      <select
-                        value={category.period}
-                        onChange={(e) => handleUpdateCategory(category.id, { period: e.target.value as 'weekly' | 'monthly' | 'yearly' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="weekly">Mingguan</option>
-                        <option value="monthly">Bulanan</option>
-                        <option value="yearly">Tahunan</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => setEditingCategory(null)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Simpan Kategori
-                    </button>
-                    <button
-                      onClick={() => setEditingCategory(null)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* View Mode */
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-2xl">{category.icon}</div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{category.name}</h3>
+                      <h3 className="font-medium text-gray-900">{b.name}</h3>
                       <p className="text-sm text-gray-600">
-                        {formatRupiah(category.allocated)} / {category.period === 'weekly' ? 'minggu' : category.period === 'monthly' ? 'bulan' : 'tahun'}
+                        {b.category_display} · {formatRupiah(b.spent_amount)} / {formatRupiah(b.allocated_amount)} (
+                        {b.budget_period})
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {b.period_start_date} — {b.period_end_date}
                       </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={category.isActive}
-                        onChange={(e) => handleUpdateCategory(category.id, { isActive: e.target.checked })}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Aktif</span>
-                    </label>
-
-                    <button
-                      onClick={() => setEditingCategory(category.id)}
-                      className="p-2 text-gray-400 hover:text-blue-600"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteCategory(category.id)}
-                      className="p-2 text-gray-400 hover:text-red-600"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {(b.common_purchases ?? []).length > 0 && (
+                  <ul className="mt-4 text-sm space-y-1">
+                    <li className="font-medium text-gray-700">Pembelian umum:</li>
+                    {(b.common_purchases ?? []).map((p) => (
+                      <li key={p.id} className="text-gray-700">
+                        {p.item}
+                        {p.quantity ? ` (${p.quantity})` : ''} — ~{formatRupiah(p.estimated_amount)}
+                        {p.store ? ` · ${p.store}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <PresetRowAppend budget={b} />
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Add New Category Modal */}
-      {isAddingCategory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tambah Kategori Baru</h2>
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 my-8 shadow-xl">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Budget baru</h2>
 
-            <div className="space-y-4">
+            <form className="space-y-4" onSubmit={handleCreateBudget}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nama Kategori
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kategori pengeluaran</label>
+                <select
+                  required
+                  value={formCategoryId}
+                  onChange={(e) => setFormCategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  <option value="">— Pilih —</option>
+                  {(expenseCategories ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama budget</label>
                 <input
-                  type="text"
-                  value={newCategory.name}
-                  onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Misalnya: Transportasi"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Alokasi (Rp)</label>
+                <input
+                  required
+                  value={formAllocatedRp}
+                  onChange={(e) => setFormAllocatedRp(e.target.value)}
+                  placeholder="1500000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Periode</label>
+                <select
+                  value={formPeriod}
+                  onChange={(e) => {
+                    const np = e.target.value as typeof formPeriod;
+                    setFormPeriod(np);
+                    applyDatesForPeriod(np);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  <option value="weekly">Mingguan</option>
+                  <option value="monthly">Bulanan</option>
+                  <option value="yearly">Tahunan</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Budget (Rp)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mulai</label>
                   <input
-                    type="number"
-                    value={newCategory.allocated || ''}
-                    onChange={(e) => setNewCategory(prev => ({ ...prev, allocated: Number(e.target.value) }))}
-                    placeholder="500000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="date"
+                    value={formStart}
+                    onChange={(e) => setFormStart(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Periode
-                  </label>
-                  <select
-                    value={newCategory.period}
-                    onChange={(e) => setNewCategory(prev => ({ ...prev, period: e.target.value as 'weekly' | 'monthly' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Akhir</label>
+                  <input
+                    type="date"
+                    value={formEnd}
+                    onChange={(e) => setFormEnd(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  className="w-16 px-2 py-2 border rounded-lg text-center"
+                  value={formIcon}
+                  onChange={(e) => setFormIcon(e.target.value)}
+                  aria-label="Icon"
+                />
+                <input
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                  placeholder="Warna tema (mis. blue)"
+                  value={formColor}
+                  onChange={(e) => setFormColor(e.target.value)}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-800">Pembelian umum (opsional)</span>
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600"
+                    onClick={addPresetDraftRow}
                   >
-                    <option value="weekly">Mingguan</option>
-                    <option value="monthly">Bulanan</option>
-                    <option value="yearly">Tahunan</option>
-                  </select>
+                    + Baris
+                  </button>
                 </div>
+                {presetsDraft.map((row, i) => (
+                  <div key={i} className="flex flex-wrap gap-2 mb-2 items-start">
+                    <input
+                      placeholder="Barang"
+                      value={row.item}
+                      onChange={(e) => updatePresetDraft(i, { item: e.target.value })}
+                      className="flex-1 min-w-[120px] text-sm px-2 py-1 border rounded"
+                    />
+                    <input
+                      placeholder="Qty"
+                      value={row.quantity}
+                      onChange={(e) => updatePresetDraft(i, { quantity: e.target.value })}
+                      className="w-24 text-sm px-2 py-1 border rounded"
+                    />
+                    <input
+                      placeholder="Rp"
+                      value={row.estimatedRupiah}
+                      onChange={(e) =>
+                        updatePresetDraft(i, { estimatedRupiah: e.target.value })
+                      }
+                      className="w-28 text-sm px-2 py-1 border rounded"
+                    />
+                    <input
+                      placeholder="Toko"
+                      value={row.store}
+                      onChange={(e) => updatePresetDraft(i, { store: e.target.value })}
+                      className="flex-1 min-w-[100px] text-sm px-2 py-1 border rounded"
+                    />
+                    <button
+                      type="button"
+                      className="text-xs text-red-600"
+                      onClick={() => removePresetDraft(i)}
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                ))}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Icon & Nama
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={newCategory.icon}
-                    onChange={(e) => setNewCategory(prev => ({ ...prev, icon: e.target.value }))}
-                    className="w-16 px-3 py-2 border border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-400">+</span>
-                  <input
-                    type="text"
-                    value={newCategory.name}
-                    onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Nama kategori"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
+              {formErr && <p className="text-sm text-red-600">{formErr}</p>}
 
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={handleAddCategory}
-                disabled={!newCategory.name || newCategory.allocated <= 0}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Tambah Kategori
-              </button>
-              <button
-                onClick={() => setIsAddingCategory(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Batal
-              </button>
-            </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createBudget.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                >
+                  {createBudget.isPending ? 'Menyimpan…' : 'Buat budget'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

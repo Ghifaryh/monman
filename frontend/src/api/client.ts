@@ -20,7 +20,19 @@ export async function apiRequest<T>(
   const response = await fetch(url, config);
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    let detail = '';
+    try {
+      const body: unknown = await response.json();
+      if (typeof body === 'object' && body !== null) {
+        const e = body as Record<string, unknown>;
+        if (typeof e.error === 'string') detail = e.error;
+        else if (typeof e.message === 'string') detail = e.message;
+      }
+    } catch {
+      /* ignore JSON parse failures */
+    }
+    const suffix = detail ? `: ${detail}` : '';
+    throw new Error(`HTTP error! status: ${response.status}${suffix}`);
   }
 
   return response.json();

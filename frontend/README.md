@@ -26,7 +26,8 @@ React TypeScript frontend for the MonMan personal finance management application
 ├── /dashboard         # Main dashboard
 ├── /transactions      # Transaction management
 ├── /ui                # Component showcase
-├── /budget-showcase   # Budget category cards demo
+├── /budget            # Kartu anggaran (API + contoh Indonesia) — pengganti `/budget-showcase`
+├── /budget-showcase    # Mengarah permanen ke `/budget`
 ├── /budget-management # Budget management examples
 └── /budget-settings   # Budget configuration page
 ```

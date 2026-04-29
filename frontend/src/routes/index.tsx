@@ -75,16 +75,26 @@ const showcaseRoute = createRoute({
   },
 });
 
-// 6. Budget Category Cards showcase route
-import { BudgetCategoryShowcase } from "../components/BudgetCategoryShowcase";
+// 6. Budget — kartu anggaran (API + contoh Indonesia)
+import { BudgetPage } from "../components/BudgetCategoryShowcase";
 
-const budgetShowcaseRoute = createRoute({
+const budgetRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/budget",
+  component: BudgetPage,
+  beforeLoad: () => {
+    setDocumentTitle('Budget');
+  },
+});
+
+/** Old URL bookmark — permanent redirect */
+const budgetShowcaseLegacyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/budget-showcase",
-  component: BudgetCategoryShowcase,
   beforeLoad: () => {
-    setDocumentTitle('Budget Categories');
+    throw redirect({ to: '/budget' });
   },
+  component: () => null,
 });
 
 // 7. Budget Management Examples showcase route
@@ -134,7 +144,8 @@ const routeTree = rootRoute.addChildren([
     indexRoute,
     transactionsRoute,
     showcaseRoute,
-    budgetShowcaseRoute,
+    budgetRoute,
+    budgetShowcaseLegacyRoute,
     budgetManagementRoute,
     budgetSettingsRoute,
   ]),

@@ -17,7 +17,7 @@ export interface BudgetCategoryCardProps {
   allocated: number; // in cents
   spent: number; // in cents
   period: 'weekly' | 'monthly' | 'yearly';
-  transactions: BudgetTransaction[];
+  transactions?: BudgetTransaction[] | null;
   lastPeriodSpent?: number; // for comparison
   onAddTransaction: (transaction: Omit<BudgetTransaction, 'id' | 'date'>) => void;
   onEditTransaction: (id: string, transaction: Partial<BudgetTransaction>) => void;
@@ -27,7 +27,7 @@ export interface BudgetCategoryCardProps {
     quantity?: string;
     estimatedAmount: number; // default price, user can edit
     store?: string;
-  }>;
+  }> | null;
   className?: string;
 }
 
@@ -51,9 +51,12 @@ export function BudgetCategoryCard({
   lastPeriodSpent,
   onAddTransaction,
   onDeleteTransaction,
-  commonPurchases = [],
+  commonPurchases,
   className = ''
 }: BudgetCategoryCardProps) {
+  // JSON `null` bypasses default params (only `undefined` triggers them)
+  const txs = transactions ?? [];
+  const presets = commonPurchases ?? [];
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
@@ -89,7 +92,7 @@ export function BudgetCategoryCard({
       onAddTransaction({
         item: newTransaction.item,
         quantity: newTransaction.quantity || undefined,
-        amount: newTransaction.amount * 100, // convert to cents
+        amount: Math.round(newTransaction.amount * 100),
         store: newTransaction.store || undefined
       });
 
@@ -99,7 +102,7 @@ export function BudgetCategoryCard({
     }
   };
 
-  const handlePresetPurchase = (preset: typeof commonPurchases[0]) => {
+  const handlePresetPurchase = (preset: (typeof presets)[number]) => {
     setNewTransaction({
       item: preset.item,
       quantity: preset.quantity || '',
@@ -153,7 +156,7 @@ export function BudgetCategoryCard({
 
         {/* Quick Stats */}
         <div className="flex justify-between items-center text-xs text-gray-500">
-          <span>{transactions.length} transaksi</span>
+          <span>{txs.length} transaksi</span>
           <span>{progressPercentage.toFixed(0)}% terpakai</span>
         </div>
       </div>
@@ -182,11 +185,11 @@ export function BudgetCategoryCard({
           )}
 
           {/* Common Purchases */}
-          {commonPurchases.length > 0 && (
+          {presets.length > 0 && (
             <div className="p-4 border-b">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Pembelian Umum</h4>
               <div className="grid grid-cols-2 gap-2">
-                {commonPurchases.map((preset, index) => (
+                {presets.map((preset, index) => (
                   <button
                     key={index}
                     onClick={() => handlePresetPurchase(preset)}
@@ -239,7 +242,7 @@ export function BudgetCategoryCard({
 
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Harga (Rp)
+                      Harga (Rp, tanpa desimal)
                     </label>
                     <input
                       type="number"
@@ -299,11 +302,11 @@ export function BudgetCategoryCard({
           )}
 
           {/* Transaction List */}
-          {transactions.length > 0 && (
+          {txs.length > 0 && (
             <div className="p-4">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Riwayat Transaksi</h4>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {transactions.map((transaction) => (
+                {txs.map((transaction) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-2 bg-white rounded border text-sm"
